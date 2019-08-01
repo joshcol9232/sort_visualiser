@@ -4,8 +4,9 @@ mod sorting_array;
 
 use nannou::prelude::*;
 
-use crate::sorting_array::SortArray;
+use crate::sorting_array::{SortArray, SortInstruction};
 
+const DATA_LEN: usize = 200;
 
 fn main() {
     nannou::app(model)
@@ -21,7 +22,6 @@ impl Model {
 
 }
 
-
 fn model(app: &App) -> Model {
     app.new_window()
         .event(event)
@@ -30,7 +30,7 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let model = Model {
-        arr: SortArray::new(100),
+        arr: SortArray::new(DATA_LEN),
     };
 
     model
@@ -44,7 +44,9 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
         // Keyboard events
         KeyPressed(key) => {
             if key == Key::S {
-                model.arr.edit("shuffle");
+                model.arr.edit(SortInstruction::Shuffle(3));
+            } else if key == Key::Key1 {
+                model.arr.edit(SortInstruction::BubbleSort);
             }
         }
         KeyReleased(_key) => {}

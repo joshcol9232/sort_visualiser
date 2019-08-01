@@ -9,6 +9,7 @@ use nannou::{
 };
 
 const SWAP_SLEEP: Duration = Duration::from_millis(5);
+const BUBBLE_SLEEP: Duration = Duration::from_millis(5);
 
 pub struct SortArray {
     pub data: Arc<RwLock<Vec<usize>>>,
@@ -27,15 +28,20 @@ impl SortArray {
         }
     }
 
-    pub fn edit(&mut self, instruction: &str) {
+    pub fn edit(&mut self, instruction: SortInstruction) {
         match instruction {
-            "shuffle" => {
+            SortInstruction::Shuffle(rounds) => {
                 let data_arc_cln = Arc::clone(&self.data);
                 self.sort_thread = Some(thread::spawn(move || {
-                    Self::shuffle(data_arc_cln, 3);
+                    Self::shuffle(data_arc_cln, rounds);
                 }));
             },
-            _ => ()
+            SortInstruction::BubbleSort => {
+                let data_arc_cln = Arc::clone(&self.data);
+                self.sort_thread = Some(thread::spawn(move || {
+                    Self::bubble_sort(data_arc_cln);
+                }));
+            }
         }
     }
 
@@ -64,13 +70,15 @@ impl SortArray {
         }
     }
 
-    pub fn shuffle(data: Arc<RwLock<Vec<usize>>>, passes: u16) {
+    fn shuffle(data: Arc<RwLock<Vec<usize>>>, passes: u16) {
         let len = data.read().unwrap().len();
 
         for _ in 0..passes {
             for i in 0..len {
-                let mut data_write = data.write().unwrap();
-                Self::swap(&mut data_write, i, nannou::rand::random_range(0usize, len));
+                {
+                    let mut data_write = data.write().unwrap();
+                    Self::swap(&mut data_write, i, nannou::rand::random_range(0usize, len));
+                }
                 thread::sleep(SWAP_SLEEP);
             }
         }
@@ -81,4 +89,34 @@ impl SortArray {
         data[i] = data[j];
         data[j] = temp;
     }
+
+
+    fn bubble_sort(data_arc: Arc<RwLock<Vec<usize>>>) {
+        let mut sorted = false;
+        let len = data_arc.read().unwrap().len();
+
+        while !sorted {
+            sorted = true;
+
+            for i in 0..len-1 {
+                let (d1, d2) = {
+                    let read = data_arc.read().unwrap();
+                    (read[i], read[i+1])
+                };
+                if d1 > d2 {
+                    {
+                        let mut data_write = data_arc.write().unwrap();
+                        Self::swap(&mut data_write, i, i+1);
+                    }
+                    sorted = false;
+                    thread::sleep(BUBBLE_SLEEP);
+                }
+            }
+        }
+    }
+}
+
+pub enum SortInstruction {
+    Shuffle(u16),
+    BubbleSort,
 }

@@ -1,0 +1,8 @@
+[package]
+name = "sort_visualiser"
+version = "0.1.0"
+authors = ["eggmund <joshuacolclough2@googlemail.com>"]
+edition = "2018"
+
+[dependencies]
+nannou = "0.9"

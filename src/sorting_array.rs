@@ -8,6 +8,8 @@ use nannou::{
     geom::point::Point2,
 };
 
+use crate::{tools, DATA_LEN, TWO_PI};
+
 const SWAP_SLEEP: Duration = Duration::from_millis(1);
 const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len squared
 
@@ -51,6 +53,18 @@ impl SortArray {
         }
     }
 
+    #[inline]
+    fn get_color(&self, i: usize, d: &usize, max_col_val: f32, offset: f32) -> Hsv {
+        let rgbhue = if i as isize == self.active {
+            RgbHue::from(0.0)
+        } else {
+            RgbHue::from((*d as f32/self.max_val as f32) * max_col_val + offset)
+        };
+
+        Hsv::new(rgbhue, 1.0, 1.0)
+    }
+
+    #[inline]
     pub fn display(&self, draw: &Draw, mode: DisplayMode, window_dims: (f32, f32), transform: (f32, f32)) {
         let data_read = self.data.read().unwrap();
 
@@ -61,13 +75,7 @@ impl SortArray {
                 for (i, d) in data_read.iter().enumerate() {
                     let x = (i as f32 * scale.0) + scale.0/2.0;
 
-                    let rgbhue = if i as isize == self.active {
-                        RgbHue::from(0.0)
-                    } else {
-                        RgbHue::from((*d as f32/self.max_val as f32) * 180.0)
-                    };
-
-                    let col = Hsv::new(rgbhue, 1.0, 1.0);
+                    let col = self.get_color(i, d, 120.0, 0.0);
 
                     draw.line()
                         .x_y(transform.0, transform.1)
@@ -77,6 +85,29 @@ impl SortArray {
                         .color(col);
                 }
             },
+            DisplayMode::Circle => {
+                let radius = if window_dims.0 > window_dims.1 { window_dims.1 } else { window_dims.0 } / 2.0;
+                println!("Radius: {}", radius);
+
+                let angle_interval = TWO_PI/DATA_LEN as f32;
+                let mut angle = 0.0;
+
+                for (i, d) in data_read.iter().enumerate() {
+                    let connecting_angle = angle + angle_interval;
+
+                    let col = self.get_color(i, d, 360.0, 0.0);
+
+                    draw.tri()
+                        .points(
+                            [0.0, 0.0],
+                            tools::get_point_on_radius(radius, angle),
+                            tools::get_point_on_radius(radius, connecting_angle)
+                        )
+                        .color(col);
+
+                    angle = connecting_angle;
+                }
+            }
         }
         
     }
@@ -148,6 +179,8 @@ pub enum SortInstruction {
     QuickSort,
 }
 
+#[derive(Clone, Copy)]
 pub enum DisplayMode {
     Bars,
+    Circle,
 }

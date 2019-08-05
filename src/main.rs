@@ -1,12 +1,16 @@
 extern crate nannou;
 
+mod tools;
 mod sorting_array;
 
 use nannou::prelude::*;
 
 use crate::sorting_array::{SortArray, SortInstruction, DisplayMode};
 
-const DATA_LEN: usize = 100;
+use std::f32::consts::PI;
+
+pub const TWO_PI: f32 = 2.0 * PI;
+pub const DATA_LEN: usize = 200;
 
 fn main() {
     nannou::app(model)
@@ -88,7 +92,7 @@ fn view(app: &App, model: &Model, frame: Frame) -> Frame {
     let draw = app.draw();
     draw.background().color(BLACK);
 
-    model.arr.display(&draw, DisplayMode::Bars,  window_dims, transformation);
+    model.arr.display(&draw, DisplayMode::Circle,  window_dims, transformation);
 
     draw.to_frame(app, &frame).unwrap();
 

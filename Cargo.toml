@@ -6,3 +6,7 @@ edition = "2018"
 
 [dependencies]
 nannou = "0.9"
+shaderc = "0.5.1"
+
+[features]
+shaderc_fix = ["shaderc/build-from-source"]

@@ -4,9 +4,9 @@ mod sorting_array;
 
 use nannou::prelude::*;
 
-use crate::sorting_array::{SortArray, SortInstruction};
+use crate::sorting_array::{SortArray, SortInstruction, DisplayMode};
 
-const DATA_LEN: usize = 200;
+const DATA_LEN: usize = 100;
 
 fn main() {
     nannou::app(model)
@@ -46,7 +46,11 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
             if key == Key::S {
                 model.arr.edit(SortInstruction::Shuffle(3));
             } else if key == Key::Key1 {
+                println!("1 pressed");
                 model.arr.edit(SortInstruction::BubbleSort);
+            } else if key == Key::Key2 {
+                println!("2 pressed");
+                model.arr.edit(SortInstruction::QuickSort);
             }
         }
         KeyReleased(_key) => {}
@@ -84,7 +88,7 @@ fn view(app: &App, model: &Model, frame: Frame) -> Frame {
     let draw = app.draw();
     draw.background().color(BLACK);
 
-    model.arr.display(&draw, window_dims, transformation);
+    model.arr.display(&draw, DisplayMode::Bars,  window_dims, transformation);
 
     draw.to_frame(app, &frame).unwrap();
 

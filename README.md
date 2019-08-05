@@ -2,7 +2,7 @@
 
 ### Controls:
 
-Key | Function
+**Key** | **Function**
 --- | ---
-1 | Bubble sort.
-S | Shuffle.
+**1** | Bubble sort.
+**S** | Shuffle.

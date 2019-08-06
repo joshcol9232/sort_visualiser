@@ -3,9 +3,12 @@ use std::thread;
 use std::sync::{Arc, RwLock};
 
 use nannou::{
-    color::{Hsv, RgbHue},
+    color::{Hsv, RgbHue, WHITE},
     draw::Draw,
-    geom::point::Point2,
+    geom::{
+        point::{self, Point2},
+        vertex,
+    },
 };
 
 use crate::{tools, DATA_LEN, TWO_PI};
@@ -45,22 +48,22 @@ impl SortArray {
                 }));
             }
             SortInstruction::QuickSort => {
-                let len = self.data.read().unwrap().len();
-                self.sort_thread = Some(thread::spawn(move || {
-                    Self::quick_sort(data_arc_cln, 0, len);
-                }));
+                // let len = self.data.read().unwrap().len();
+                // self.sort_thread = Some(thread::spawn(move || {
+                //     Self::quick_sort(data_arc_cln, 0, len);
+                // }));
             }
         }
     }
 
     #[inline]
     fn get_color(&self, i: usize, d: &usize, max_col_val: f32, offset: f32) -> Hsv {
-        let rgbhue = if i as isize == self.active {
-            RgbHue::from(0.0)
-        } else {
-            RgbHue::from((*d as f32/self.max_val as f32) * max_col_val + offset)
-        };
-
+        // let rgbhue = if i as isize == self.active {
+        //     RgbHue::from(0.0)
+        // } else {
+        //     RgbHue::from((*d as f32/self.max_val as f32) * max_col_val + offset)
+        // };
+        let rgbhue = RgbHue::from((*d as f32/self.max_val as f32) * max_col_val + offset);
         Hsv::new(rgbhue, 1.0, 1.0)
     }
 
@@ -87,7 +90,6 @@ impl SortArray {
             },
             DisplayMode::Circle => {
                 let radius = if window_dims.0 > window_dims.1 { window_dims.1 } else { window_dims.0 } / 2.0;
-                println!("Radius: {}", radius);
 
                 let angle_interval = TWO_PI/DATA_LEN as f32;
                 let mut angle = 0.0;
@@ -107,9 +109,29 @@ impl SortArray {
 
                     angle = connecting_angle;
                 }
+            },
+            DisplayMode::Line => {
+                /* Polyline is broken in nannou atm, so waiting for change to lyon which they are implementing.
+                    see: https://github.com/nannou-org/nannou/issues/185
+                
+                let mut points: Vec<vertex::Srgba> = Vec::with_capacity(DATA_LEN);
+                let scale = (window_dims.0/data_read.len() as f32, window_dims.1/self.max_val as f32);
+                
+                for (i, d) in data_read.iter().enumerate() {
+                    let col = self.get_color(i, d, 360.0, 0.0);
+                    points.push(
+                        vertex::Srgba(
+                            [(i as f32 * scale.0) + scale.0/2.0 + transform.0, (*d as f32 + 1.0) * scale.1 + transform.1].into(),
+                            col.into()
+                        )
+                    );
+                }
+
+                draw.polyline()
+                    .vertices(1.0, points);
+                */
             }
-        }
-        
+        },
     }
 
     fn shuffle(data: Arc<RwLock<Vec<usize>>>, passes: u16) {
@@ -157,20 +179,20 @@ impl SortArray {
         }
     }
 
-    // Uses indicies of array rather than making new ones
-    fn quick_sort(data_arc: Arc<RwLock<Vec<usize>>>, low: usize, high: usize) {
-        assert!(high > low);    // High should always be > low.
-        println!("{} {}", high, low);
+    // // Uses indicies of array rather than making new ones
+    // fn quick_sort(data_arc: Arc<RwLock<Vec<usize>>>, low: usize, high: usize) {
+    //     assert!(high > low);    // High should always be > low.
+    //     println!("{} {}", high, low);
 
-        let len = high - low;
-        let pivot_index = high-1;
-        let pivot = data_arc.read().unwrap()[pivot_index];
+    //     let len = high - low;
+    //     let pivot_index = high-1;
+    //     let pivot = data_arc.read().unwrap()[pivot_index];
 
-        for i in low..high {
-            let item = data_arc.read().unwrap()[i];   // Read from array
+    //     for i in low..high {
+    //         let item = data_arc.read().unwrap()[i];   // Read from array
 
-        }
-    }
+    //     }
+    // }
 }
 
 pub enum SortInstruction {
@@ -183,4 +205,5 @@ pub enum SortInstruction {
 pub enum DisplayMode {
     Bars,
     Circle,
+    Line,
 }

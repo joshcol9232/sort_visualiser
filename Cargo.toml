@@ -5,7 +5,7 @@ authors = ["eggmund <joshuacolclough2@googlemail.com>"]
 edition = "2018"
 
 [dependencies]
-nannou = "0.9"
+nannou = "0.10"
 shaderc = "0.5.1"
 
 [features]

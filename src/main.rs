@@ -10,7 +10,7 @@ use crate::sorting_array::{SortArray, SortInstruction, DisplayMode};
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DATA_LEN: usize = 200;
+pub const DATA_LEN: usize = 50;
 
 fn main() {
     nannou::app(model)
@@ -83,7 +83,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
     }
 }
 
-fn view(app: &App, model: &Model, frame: Frame) -> Frame {
+fn view(app: &App, model: &Model, frame: &Frame) {
     let window_rect = app.window_rect();
     let window_dims = (window_rect.w(), window_rect.h());
 
@@ -95,6 +95,4 @@ fn view(app: &App, model: &Model, frame: Frame) -> Frame {
     model.arr.display(&draw, DisplayMode::Circle,  window_dims, transformation);
 
     draw.to_frame(app, &frame).unwrap();
-
-    frame
 }

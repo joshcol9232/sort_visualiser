@@ -55,6 +55,9 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
             } else if key == Key::Key2 {
                 println!("2 pressed");
                 model.arr.edit(SortInstruction::QuickSort);
+            } else if key == Key::Key3 {
+                println!("3 pressed");
+                model.arr.edit(SortInstruction::ShellSort);
             }
         }
         KeyReleased(_key) => {}

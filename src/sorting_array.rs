@@ -13,6 +13,32 @@ use nannou::{
 
 use crate::{tools, DATA_LEN, TWO_PI};
 
+mod shell_sort {
+    pub struct ShellSortGapsIter {
+        count: usize,
+    }
+
+    impl Default for ShellSortGapsIter {
+        fn default() -> ShellSortGapsIter {
+            ShellSortGapsIter {
+                count: 1,
+            }
+        }
+    }
+
+    impl Iterator for ShellSortGapsIter {
+        type Item = usize;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            // 2^k - 1
+            let next_val = (2_usize).pow(self.count as u32) - 1;
+            self.count += 1;
+
+            Some(next_val)
+        }
+    }
+}
+
 const SWAP_SLEEP: Duration = Duration::from_millis(1);
 const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len squared
 
@@ -43,15 +69,23 @@ impl SortArray {
                 }));
             },
             SortInstruction::BubbleSort => {
+                let len = self.data.read().unwrap().len();
+
                 self.sort_thread = Some(thread::spawn(move || {
-                    Self::bubble_sort(data_arc_cln);
+                    Self::bubble_sort(data_arc_cln, len);
                 }));
-            }
+            },
             SortInstruction::QuickSort => {
                 // let len = self.data.read().unwrap().len();
                 // self.sort_thread = Some(thread::spawn(move || {
                 //     Self::quick_sort(data_arc_cln, 0, len);
                 // }));
+            },
+            SortInstruction::ShellSort => {
+                let len = self.data.read().unwrap().len();
+                self.sort_thread = Some(thread::spawn(move || {
+                    Self::shell_sort(data_arc_cln, len);
+                }));
             }
         }
     }
@@ -131,7 +165,7 @@ impl SortArray {
                     .vertices(1.0, points);
                 */
             }
-        },
+        }
     }
 
     fn shuffle(data: Arc<RwLock<Vec<usize>>>, passes: u16) {
@@ -155,9 +189,8 @@ impl SortArray {
     }
 
 
-    fn bubble_sort(data_arc: Arc<RwLock<Vec<usize>>>) {
+    fn bubble_sort(data_arc: Arc<RwLock<Vec<usize>>>, len: usize) {
         let mut sorted = false;
-        let len = data_arc.read().unwrap().len();
 
         while !sorted {
             sorted = true;
@@ -193,12 +226,47 @@ impl SortArray {
 
     //     }
     // }
+
+    fn shell_sort(data_arc: Arc<RwLock<Vec<usize>>>, len: usize) {
+        println!("Doing shell sort");
+        use shell_sort::ShellSortGapsIter;
+        let gaps: Vec<usize> = ShellSortGapsIter::default().take_while(|val| *val < len).collect();
+
+        for gap in gaps.iter().rev() {
+            let mut i = *gap;
+
+            while i < len {
+                let mut j = i;
+
+                let (mut start, mut curr) = {
+                    let read = data_arc.read().unwrap();
+                    (read[j-gap], read[j])
+                };
+                while j >= *gap && start > curr {
+                    {
+                        let mut write = data_arc.write().unwrap();
+
+                        // Swap
+                        let temp = write[j-gap];
+                        write[j-gap] = write[j];
+                        write[j] = temp;
+
+                        start = write[j-gap];
+                        curr = write[j];
+                    }
+                    j -= *gap;
+                }
+            }
+        }
+        println!("Doing shell sort");
+    }
 }
 
 pub enum SortInstruction {
     Shuffle(u16),
     BubbleSort,
     QuickSort,
+    ShellSort,
 }
 
 #[derive(Clone, Copy)]

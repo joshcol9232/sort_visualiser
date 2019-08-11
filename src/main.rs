@@ -10,7 +10,7 @@ use crate::sorting_array::{SortArray, SortInstruction, DisplayMode};
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DATA_LEN: usize = 50;
+pub const DATA_LEN: usize = 200;
 
 fn main() {
     nannou::app(model)
@@ -20,11 +20,9 @@ fn main() {
 
 struct Model {
     arr: SortArray,
+    current_display_mode: DisplayMode,
 }
 
-impl Model {
-
-}
 
 fn model(app: &App) -> Model {
     app.new_window()
@@ -35,6 +33,7 @@ fn model(app: &App) -> Model {
 
     let model = Model {
         arr: SortArray::new(DATA_LEN),
+        current_display_mode: DisplayMode::Circle,
     };
 
     model
@@ -47,17 +46,18 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
     match event {
         // Keyboard events
         KeyPressed(key) => {
-            if key == Key::S {
-                model.arr.edit(SortInstruction::Shuffle(3));
-            } else if key == Key::Key1 {
-                println!("1 pressed");
-                model.arr.edit(SortInstruction::BubbleSort);
-            } else if key == Key::Key2 {
-                println!("2 pressed");
-                model.arr.edit(SortInstruction::QuickSort);
-            } else if key == Key::Key3 {
-                println!("3 pressed");
-                model.arr.edit(SortInstruction::ShellSort);
+            match key {
+                Key::S => model.arr.edit(SortInstruction::Shuffle(3)),
+                Key::R => model.arr.edit(SortInstruction::Reset),
+                Key::I => model.arr.edit(SortInstruction::Reverse),
+                Key::C => model.current_display_mode = DisplayMode::Circle,
+                Key::B => model.current_display_mode = DisplayMode::Bars,
+                Key::D => model.current_display_mode = DisplayMode::Dots,
+
+                Key::Key1 => model.arr.edit(SortInstruction::BubbleSort),
+                Key::Key2 => model.arr.edit(SortInstruction::QuickSort),
+                Key::Key3 => model.arr.edit(SortInstruction::InsertionSort),
+                _ => ()
             }
         }
         KeyReleased(_key) => {}
@@ -95,7 +95,7 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     let draw = app.draw();
     draw.background().color(BLACK);
 
-    model.arr.display(&draw, DisplayMode::Circle,  window_dims, transformation);
+    model.arr.display(&draw, model.current_display_mode,  window_dims, transformation);
 
     draw.to_frame(app, &frame).unwrap();
 }

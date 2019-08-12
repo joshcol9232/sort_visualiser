@@ -1,16 +1,16 @@
-extern crate nannou;
-
 mod tools;
 mod sorting_array;
 
 use nannou::prelude::*;
+use nannou::draw::Draw;
 
 use crate::sorting_array::{SortArray, SortInstruction, DisplayMode};
 
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DATA_LEN: usize = 200;
+pub const DATA_LEN: usize = 100;
+
 
 fn main() {
     nannou::app(model)
@@ -18,9 +18,38 @@ fn main() {
         .run();
 }
 
+#[derive(Default)]
 struct Model {
-    arr: SortArray,
+    arrays: Vec<SortArray>,
     current_display_mode: DisplayMode,
+    window_dims: (f32, f32),
+}
+
+impl Model {
+    fn edit(&mut self, instruction: SortInstruction) {
+        for arr in self.arrays.iter_mut() {
+            arr.edit(instruction);
+        }
+    }
+
+    fn display(&self, draw: &Draw, transform: (f32, f32)) {
+        for (i, arr) in self.arrays.iter().enumerate() {
+            arr.display(draw, i, self.arrays.len(), self.current_display_mode, self.window_dims, transform);
+        }
+    }
+
+
+    fn set_to_single_array(&mut self) {
+        self.arrays.clear();
+        self.arrays.push(SortArray::new(DATA_LEN));
+    }
+
+    fn set_to_multi_array(&mut self, len: usize) {
+        self.arrays.clear();
+        for _ in 0..len {
+            self.arrays.push(SortArray::new(DATA_LEN));
+        }
+    }
 }
 
 
@@ -32,14 +61,17 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let model = Model {
-        arr: SortArray::new(DATA_LEN),
+        arrays: vec![SortArray::new(DATA_LEN)],
         current_display_mode: DisplayMode::Circle,
+        window_dims: (0.0, 0.0),
     };
 
     model
 }
 
-fn update(_app: &App, _model: &mut Model, _update: Update) {
+fn update(app: &App, model: &mut Model, _update: Update) {
+    let window_rect = app.window_rect();
+    model.window_dims = (window_rect.w(), window_rect.h());
 }
 
 fn event(_app: &App, model: &mut Model, event: WindowEvent) {
@@ -47,16 +79,38 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
         // Keyboard events
         KeyPressed(key) => {
             match key {
-                Key::S => model.arr.edit(SortInstruction::Shuffle(3)),
-                Key::R => model.arr.edit(SortInstruction::Reset),
-                Key::I => model.arr.edit(SortInstruction::Reverse),
-                Key::C => model.current_display_mode = DisplayMode::Circle,
-                Key::B => model.current_display_mode = DisplayMode::Bars,
-                Key::D => model.current_display_mode = DisplayMode::Dots,
+                Key::S => model.edit(SortInstruction::Shuffle(3)),
+                Key::R => model.edit(SortInstruction::Reset),
+                Key::I => model.edit(SortInstruction::Reverse),
 
-                Key::Key1 => model.arr.edit(SortInstruction::BubbleSort),
-                Key::Key2 => model.arr.edit(SortInstruction::QuickSort),
-                Key::Key3 => model.arr.edit(SortInstruction::InsertionSort),
+                Key::C | Key::B | Key::D => {
+                    if model.arrays.len() > 1 {
+                        model.set_to_single_array();
+                    }
+                    
+                    match key {
+                        Key::C => model.current_display_mode = DisplayMode::Circle,
+                        Key::B => model.current_display_mode = DisplayMode::Bars,
+                        Key::D => model.current_display_mode = DisplayMode::Dots,
+                        _ => ()
+                    }
+                },
+                Key::P => {     // Pixel display mode (multi-array)
+                    if model.arrays.len() == 1 {
+                        model.set_to_single_array();
+                    }
+
+                    // Make it so that each pixel is square.
+                    let pixel_height = model.window_dims.1/DATA_LEN as f32;
+                    let array_num = (model.window_dims.0/pixel_height).ceil() as usize;
+
+                    model.set_to_multi_array(array_num);
+                    model.current_display_mode = DisplayMode::Pixels;
+                }
+
+                Key::Key1 => model.edit(SortInstruction::BubbleSort),
+                Key::Key2 => model.edit(SortInstruction::QuickSort),
+                Key::Key3 => model.edit(SortInstruction::InsertionSort),
                 _ => ()
             }
         }
@@ -87,15 +141,12 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
 }
 
 fn view(app: &App, model: &Model, frame: &Frame) {
-    let window_rect = app.window_rect();
-    let window_dims = (window_rect.w(), window_rect.h());
-
-    let transformation = (-window_dims.0/2.0, -window_dims.1/2.0);      // Axis starts bottom left corner
+    let transformation = (-model.window_dims.0/2.0, -model.window_dims.1/2.0);      // Axis starts bottom left corner
 
     let draw = app.draw();
     draw.background().color(BLACK);
 
-    model.arr.display(&draw, model.current_display_mode,  window_dims, transformation);
+    model.display(&draw, transformation);
 
     draw.to_frame(app, &frame).unwrap();
 }

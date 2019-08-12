@@ -3,7 +3,6 @@ use std::thread;
 use std::sync::{Arc, RwLock};
 
 use nannou::{
-    color::{Hsv, RgbHue},
     draw::Draw,
     geom::point::Point2,
 };
@@ -89,13 +88,7 @@ impl SortArray {
     }
 
     #[inline]
-    fn get_color(&self, d: &usize, max_col_val: f32, offset: f32) -> Hsv {
-        let rgbhue = RgbHue::from((*d as f32/self.max_val as f32) * max_col_val + offset);
-        Hsv::new(rgbhue, 1.0, 1.0)
-    }
-
-    #[inline]
-    pub fn display(&self, draw: &Draw, mode: DisplayMode, window_dims: (f32, f32), transform: (f32, f32)) {
+    pub fn display(&self, draw: &Draw, index: usize, max_index: usize, mode: DisplayMode, window_dims: (f32, f32), transform: (f32, f32)) {
         let data_read = self.data.read().unwrap();
 
         match mode {
@@ -104,15 +97,12 @@ impl SortArray {
 
                 for (i, d) in data_read.iter().enumerate() {
                     let x = (i as f32 * scale.0) + scale.0/2.0;
-
-                    let col = self.get_color(d, 120.0, 0.0);
-
                     draw.line()
                         .x_y(transform.0, transform.1)
                         .start(Point2::new(x, 0.0))
                         .end(Point2::new(x, (*d as f32 + 1.0) * scale.1))
                         .thickness(scale.0)
-                        .color(col);
+                        .hsv((*d as f32/self.max_val as f32)/3.0, 1.0, 1.0);
                 }
             },
             DisplayMode::Circle => {
@@ -124,15 +114,13 @@ impl SortArray {
                 for d in data_read.iter() {
                     let connecting_angle = angle + angle_interval;
 
-                    let col = self.get_color(d, 360.0, 0.0);
-
                     draw.tri()
                         .points(
                             [0.0, 0.0],
                             tools::get_point_on_radius(radius, angle),
                             tools::get_point_on_radius(radius, connecting_angle)
                         )
-                        .color(col);
+                        .hsv(*d as f32/self.max_val as f32, 1.0, 1.0);
 
                     angle = connecting_angle;
                 }
@@ -162,12 +150,22 @@ impl SortArray {
                 let scale = (window_dims.0/data_read.len() as f32, window_dims.1/self.max_val as f32);
 
                 for (i, d) in data_read.iter().enumerate() {
-                    let col = self.get_color(d, 120.0, 0.0);
-
                     draw.ellipse()
                         .x_y(transform.0 + ((i as f32 * scale.0) + scale.0/2.0), transform.1 + ((*d as f32 + 1.0) * scale.1))
                         .radius(scale.0/2.0)
-                        .color(col);
+                        .hsv((*d as f32/self.max_val as f32)/3.0, 1.0, 1.0);
+                }
+            },
+            DisplayMode::Pixels => {
+                let scale = (window_dims.0/max_index as f32, window_dims.1/self.max_val as f32);
+
+                let x = (index as f32 * scale.0) + scale.0/2.0;
+
+                for (i, d) in data_read.iter().enumerate() {
+                    draw.rect()
+                        .x_y(transform.0 + x, transform.1 + (window_dims.1 - (i as f32 * scale.1)) - scale.1/2.0)
+                        .w_h(scale.0, scale.1)
+                        .hsv((*d as f32/self.max_val as f32)/3.0, 1.0, 1.0);
                 }
             }
         }
@@ -176,7 +174,8 @@ impl SortArray {
     fn shuffle(data: Arc<RwLock<Vec<usize>>>, passes: u16) {
         let len = data.read().unwrap().len();
 
-        for _ in 0..passes {
+        for x in 0..passes {
+            println!("Doing shuffle pass: {}", x);
             for i in 0..len {
                 {
                     let mut data_write = data.write().unwrap();
@@ -229,7 +228,6 @@ impl SortArray {
     // }
 
     fn insertion_sort(data_arc: Arc<RwLock<Vec<usize>>>) {
-        println!("Doing insertion sort");
         let len = data_arc.read().unwrap().len();
         
         for i in 1..len {
@@ -247,6 +245,7 @@ impl SortArray {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum SortInstruction {
     Shuffle(u16),
     Reset,
@@ -263,4 +262,11 @@ pub enum DisplayMode {
     Circle,
     Line,
     Dots,
+    Pixels,
+}
+
+impl Default for DisplayMode {
+    fn default() -> DisplayMode {
+        DisplayMode::Circle
+    }
 }

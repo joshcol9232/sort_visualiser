@@ -9,7 +9,7 @@ use crate::sorting_array::{SortArray, SortInstruction, DisplayMode};
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DATA_LEN: usize = 100;
+pub const DATA_LEN: usize = 50;
 
 
 fn main() {
@@ -26,9 +26,10 @@ struct Model {
 }
 
 impl Model {
-    fn edit(&mut self, instruction: SortInstruction) {
+    // Sends instruction to all arrays
+    fn instruction(&mut self, instruction: SortInstruction) {
         for arr in self.arrays.iter_mut() {
-            arr.edit(instruction);
+            arr.instruction(instruction);
         }
     }
 
@@ -37,7 +38,6 @@ impl Model {
             arr.display(draw, i, self.arrays.len(), self.current_display_mode, self.window_dims, transform);
         }
     }
-
 
     fn set_to_single_array(&mut self) {
         self.arrays.clear();
@@ -79,9 +79,9 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
         // Keyboard events
         KeyPressed(key) => {
             match key {
-                Key::S => model.edit(SortInstruction::Shuffle(3)),
-                Key::R => model.edit(SortInstruction::Reset),
-                Key::I => model.edit(SortInstruction::Reverse),
+                Key::S => model.instruction(SortInstruction::Shuffle(3)),
+                Key::R => model.instruction(SortInstruction::Reset),
+                Key::I => model.instruction(SortInstruction::Reverse),
 
                 Key::C | Key::B | Key::D => {
                     if model.arrays.len() > 1 {
@@ -108,9 +108,9 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                     model.current_display_mode = DisplayMode::Pixels;
                 }
 
-                Key::Key1 => model.edit(SortInstruction::BubbleSort),
-                Key::Key2 => model.edit(SortInstruction::QuickSort),
-                Key::Key3 => model.edit(SortInstruction::InsertionSort),
+                Key::Key1 => model.instruction(SortInstruction::BubbleSort),
+                Key::Key2 => model.instruction(SortInstruction::QuickSort),
+                Key::Key3 => model.instruction(SortInstruction::InsertionSort),
                 _ => ()
             }
         }

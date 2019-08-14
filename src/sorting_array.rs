@@ -37,6 +37,7 @@ mod shell_sort {
 
 const SWAP_SLEEP: Duration = Duration::from_millis(1);
 const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len squared
+const QUICK_SLEEP: Duration = Duration::from_secs(5);
 
 
 pub struct SortArray {
@@ -54,7 +55,7 @@ impl SortArray {
         }
     }
 
-    pub fn edit(&mut self, instruction: SortInstruction) {
+    pub fn instruction(&mut self, instruction: SortInstruction) {
         let data_arc_cln = Arc::clone(&self.data);
         match instruction {
             SortInstruction::Shuffle(rounds) => {
@@ -68,10 +69,10 @@ impl SortArray {
                 }));
             },
             SortInstruction::QuickSort => {
-                // let len = self.data.read().unwrap().len();
-                // self.sort_thread = Some(thread::spawn(move || {
-                //     Self::quick_sort(data_arc_cln, 0, len);
-                // }));
+                let len = self.data.read().unwrap().len();
+                self.sort_thread = Some(thread::spawn(move || {
+                    Self::quick_sort(data_arc_cln, 0, len-1, len);
+                }));
             },
             SortInstruction::InsertionSort => {
                 self.sort_thread = Some(thread::spawn(move || {
@@ -83,7 +84,7 @@ impl SortArray {
             },
             SortInstruction::Reverse => {
                 self.data.write().unwrap().reverse();
-            }
+            },
         }
     }
 
@@ -151,7 +152,7 @@ impl SortArray {
 
                 for (i, d) in data_read.iter().enumerate() {
                     draw.ellipse()
-                        .x_y(transform.0 + ((i as f32 * scale.0) + scale.0/2.0), transform.1 + ((*d as f32 + 1.0) * scale.1))
+                        .x_y(transform.0 + ((i as f32 * scale.0) + scale.0/2.0), transform.1 + ((*d as f32 + 0.5) * scale.1))
                         .radius(scale.0/2.0)
                         .hsv((*d as f32/self.max_val as f32)/3.0, 1.0, 1.0);
                 }
@@ -159,13 +160,13 @@ impl SortArray {
             DisplayMode::Pixels => {
                 let scale = (window_dims.0/max_index as f32, window_dims.1/self.max_val as f32);
 
-                let x = (index as f32 * scale.0) + scale.0/2.0;
+                let x = (index as f32 + 0.5) * scale.0;
 
                 for (i, d) in data_read.iter().enumerate() {
                     draw.rect()
-                        .x_y(transform.0 + x, transform.1 + (window_dims.1 - (i as f32 * scale.1)) - scale.1/2.0)
+                        .x_y(transform.0 + x, transform.1 + (i as f32 + 0.5) * scale.1)
                         .w_h(scale.0, scale.1)
-                        .hsv((*d as f32/self.max_val as f32)/3.0, 1.0, 1.0);
+                        .hsv((1.0 - (*d as f32/self.max_val as f32))/3.0, 1.0, 1.0);
                 }
             }
         }
@@ -174,8 +175,7 @@ impl SortArray {
     fn shuffle(data: Arc<RwLock<Vec<usize>>>, passes: u16) {
         let len = data.read().unwrap().len();
 
-        for x in 0..passes {
-            println!("Doing shuffle pass: {}", x);
+        for _ in 0..passes {
             for i in 0..len {
                 {
                     let mut data_write = data.write().unwrap();
@@ -212,20 +212,36 @@ impl SortArray {
         }
     }
 
-    // // Uses indicies of array rather than making new ones
-    // fn quick_sort(data_arc: Arc<RwLock<Vec<usize>>>, low: usize, high: usize) {
-    //     assert!(high > low);    // High should always be > low.
-    //     println!("{} {}", high, low);
 
-    //     let len = high - low;
-    //     let pivot_index = high-1;
-    //     let pivot = data_arc.read().unwrap()[pivot_index];
+    fn quick_sort(data_arc: Arc<RwLock<Vec<usize>>>, low: usize, high: usize, data_len: usize) {
+        // Lomuto partition scheme: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
+        // Pretty much copied the pseudocode
+        fn partition(data_arc: Arc<RwLock<Vec<usize>>>, low: usize, high: usize, data_len: usize) -> usize {
+            let pivot = data_arc.read().unwrap()[high];
 
-    //     for i in low..high {
-    //         let item = data_arc.read().unwrap()[i];   // Read from array
+            let mut i = low;
+            for j in low..high {
+                if data_arc.read().unwrap()[j] < pivot {
+                    data_arc.write().unwrap().swap(i, j);
+                    i += 1;
+                    thread::sleep(QUICK_SLEEP/data_len as u32);
+                }
+            }
 
-    //     }
-    // }
+            data_arc.write().unwrap().swap(i, high);
+            i
+        }
+
+        if low < high {  // Not equal
+            let p = partition(data_arc.clone(), low, high, data_len);
+            if p > 0 {
+                Self::quick_sort(data_arc.clone(), low, p - 1, data_len);
+            }
+            if p < high {
+                Self::quick_sort(data_arc.clone(), p + 1, high, data_len);
+            }   
+        }
+    }
 
     fn insertion_sort(data_arc: Arc<RwLock<Vec<usize>>>) {
         let len = data_arc.read().unwrap().len();

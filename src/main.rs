@@ -12,7 +12,7 @@ use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
 pub const DEFAULT_DATA_LEN: usize = 500;
-
+const MULTI_ARRAY_LEN: usize = 100;
 
 fn main() {
     nannou::app(model)
@@ -44,11 +44,13 @@ impl Model {
 
     fn set_to_single_array(&mut self) {
         self.arrays.clear();
+        self.array_len = DEFAULT_DATA_LEN;
         self.arrays.push(SortArray::new(self.array_len));
     }
 
     fn set_to_multi_array(&mut self, len: usize) {
         self.arrays.clear();
+        self.array_len = MULTI_ARRAY_LEN;
         for _ in 0..len {
             self.arrays.push(SortArray::new(self.array_len));
         }

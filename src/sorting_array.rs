@@ -37,7 +37,7 @@ mod shell_sort {
 
 const SWAP_SLEEP: Duration = Duration::from_millis(1);
 const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len squared
-const QUICK_SLEEP: Duration = Duration::from_secs(2);
+const QUICK_SLEEP: Duration = Duration::from_secs(5);
 
 #[derive(Shrinkwrap)]
 #[shrinkwrap(mutable)]

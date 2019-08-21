@@ -1,15 +1,17 @@
+#[macro_use] extern crate shrinkwraprs;
+
 mod tools;
 mod sorting_array;
 
 use nannou::prelude::*;
 use nannou::draw::Draw;
 
-use crate::sorting_array::{SortArray, SortInstruction, DisplayMode};
+use crate::sorting_array::{SortArray, SortInstruction, QuickSortType, DisplayMode};
 
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DATA_LEN: usize = 50;
+pub const DEFAULT_DATA_LEN: usize = 500;
 
 
 fn main() {
@@ -23,6 +25,7 @@ struct Model {
     arrays: Vec<SortArray>,
     current_display_mode: DisplayMode,
     window_dims: (f32, f32),
+    array_len: usize,
 }
 
 impl Model {
@@ -35,19 +38,19 @@ impl Model {
 
     fn display(&self, draw: &Draw, transform: (f32, f32)) {
         for (i, arr) in self.arrays.iter().enumerate() {
-            arr.display(draw, i, self.arrays.len(), self.current_display_mode, self.window_dims, transform);
+            arr.display(draw, i, self.arrays.len(), arr.len(), self.current_display_mode, self.window_dims, transform);
         }
     }
 
     fn set_to_single_array(&mut self) {
         self.arrays.clear();
-        self.arrays.push(SortArray::new(DATA_LEN));
+        self.arrays.push(SortArray::new(self.array_len));
     }
 
     fn set_to_multi_array(&mut self, len: usize) {
         self.arrays.clear();
         for _ in 0..len {
-            self.arrays.push(SortArray::new(DATA_LEN));
+            self.arrays.push(SortArray::new(self.array_len));
         }
     }
 }
@@ -61,9 +64,10 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let model = Model {
-        arrays: vec![SortArray::new(DATA_LEN)],
+        arrays: vec![SortArray::new(DEFAULT_DATA_LEN)],
         current_display_mode: DisplayMode::Circle,
         window_dims: (0.0, 0.0),
+        array_len: DEFAULT_DATA_LEN
     };
 
     model
@@ -101,7 +105,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                     }
 
                     // Make it so that each pixel is square.
-                    let pixel_height = model.window_dims.1/DATA_LEN as f32;
+                    let pixel_height = model.window_dims.1/model.array_len as f32;
                     let array_num = (model.window_dims.0/pixel_height).ceil() as usize;
 
                     model.set_to_multi_array(array_num);
@@ -109,8 +113,13 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 }
 
                 Key::Key1 => model.instruction(SortInstruction::BubbleSort),
-                Key::Key2 => model.instruction(SortInstruction::QuickSort),
-                Key::Key3 => model.instruction(SortInstruction::InsertionSort),
+                Key::Key2 => model.instruction(SortInstruction::InsertionSort),
+                Key::Key3 => model.instruction(
+                    SortInstruction::QuickSort(QuickSortType::LomutoPartitioning)
+                ),
+                // Key::Key4 => model.instruction(
+                //     SortInstruction::QuickSort(QuickSortType::Overwriting)
+                // ),
                 _ => ()
             }
         }

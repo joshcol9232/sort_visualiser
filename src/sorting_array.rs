@@ -7,7 +7,7 @@ use nannou::{
     geom::point::Point2,
 };
 
-use crate::{tools, DATA_LEN, TWO_PI};
+use crate::{tools, TWO_PI};
 
 mod shell_sort {
     pub struct ShellSortGapsIter {
@@ -37,11 +37,28 @@ mod shell_sort {
 
 const SWAP_SLEEP: Duration = Duration::from_millis(1);
 const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len squared
-const QUICK_SLEEP: Duration = Duration::from_secs(5);
+const QUICK_SLEEP: Duration = Duration::from_secs(2);
 
+#[derive(Shrinkwrap)]
+#[shrinkwrap(mutable)]
+pub struct DataArrWrapper {
+    #[shrinkwrap(main_field)] pub arr: Vec<usize>,
+    pub active: Option<usize>,
+    pub pivot: Option<usize>,
+}
+
+impl DataArrWrapper {
+    pub fn new(arr: Vec<usize>) -> Self {
+        Self {
+            arr,
+            active: None,
+            pivot: None,
+        }
+    }
+}
 
 pub struct SortArray {
-    pub data: Arc<RwLock<Vec<usize>>>,
+    pub data: Arc<RwLock<DataArrWrapper>>,
     pub max_val: usize,
     sort_thread: Option<thread::JoinHandle<()>>,
 }
@@ -49,7 +66,9 @@ pub struct SortArray {
 impl SortArray {
     pub fn new(num_of_lines: usize) -> SortArray {
         SortArray {
-            data: Arc::new(RwLock::new((0..num_of_lines).collect())),
+            data: Arc::new(RwLock::new(
+                DataArrWrapper::new((0..num_of_lines).collect())
+            )),
             max_val: num_of_lines,
             sort_thread: None,
         }
@@ -60,23 +79,37 @@ impl SortArray {
         match instruction {
             SortInstruction::Shuffle(rounds) => {
                 self.sort_thread = Some(thread::spawn(move || {
-                    Self::shuffle(data_arc_cln, rounds);
+                    Self::shuffle(data_arc_cln.clone(), rounds);
+                    Self::reset_arr_info(data_arc_cln);
                 }));
             },
             SortInstruction::BubbleSort => {
                 self.sort_thread = Some(thread::spawn(move || {
-                    Self::bubble_sort(data_arc_cln);
+                    Self::bubble_sort(data_arc_cln.clone());
+                    Self::reset_arr_info(data_arc_cln);
                 }));
             },
-            SortInstruction::QuickSort => {
+            SortInstruction::QuickSort(partition_type) => {
                 let len = self.data.read().unwrap().len();
-                self.sort_thread = Some(thread::spawn(move || {
-                    Self::quick_sort(data_arc_cln, 0, len-1, len);
-                }));
+                match partition_type {
+                    QuickSortType::LomutoPartitioning => {
+                        self.sort_thread = Some(thread::spawn(move || {
+                            Self::quick_sort(data_arc_cln.clone(), 0, len-1, len as u32);
+                            Self::reset_arr_info(data_arc_cln);
+                        }));
+                    },
+                    QuickSortType::Overwriting => {
+                        self.sort_thread = Some(thread::spawn(move || {
+                            Self::overwriting_quicksort(data_arc_cln.clone(), 0, len, len as u32);
+                            Self::reset_arr_info(data_arc_cln);
+                        }));
+                    }
+                }
             },
             SortInstruction::InsertionSort => {
                 self.sort_thread = Some(thread::spawn(move || {
-                    Self::insertion_sort(data_arc_cln);
+                    Self::insertion_sort(data_arc_cln.clone());
+                    Self::reset_arr_info(data_arc_cln);
                 }));
             },
             SortInstruction::Reset => {
@@ -89,12 +122,12 @@ impl SortArray {
     }
 
     #[inline]
-    pub fn display(&self, draw: &Draw, index: usize, max_index: usize, mode: DisplayMode, window_dims: (f32, f32), transform: (f32, f32)) {
+    pub fn display(&self, draw: &Draw, index: usize, max_index: usize, array_len: usize, mode: DisplayMode, window_dims: (f32, f32), transform: (f32, f32)) {
         let data_read = self.data.read().unwrap();
 
         match mode {
             DisplayMode::Bars => {
-                let scale = (window_dims.0/data_read.len() as f32, window_dims.1/self.max_val as f32);
+                let scale = (window_dims.0/array_len as f32, window_dims.1/self.max_val as f32);
 
                 for (i, d) in data_read.iter().enumerate() {
                     let x = (i as f32 * scale.0) + scale.0/2.0;
@@ -109,7 +142,7 @@ impl SortArray {
             DisplayMode::Circle => {
                 let radius = if window_dims.0 > window_dims.1 { window_dims.1 } else { window_dims.0 } / 2.0;
 
-                let angle_interval = TWO_PI/DATA_LEN as f32;
+                let angle_interval = TWO_PI/array_len as f32;
                 let mut angle = 0.0;
 
                 for d in data_read.iter() {
@@ -148,7 +181,7 @@ impl SortArray {
                 */
             },
             DisplayMode::Dots => {
-                let scale = (window_dims.0/data_read.len() as f32, window_dims.1/self.max_val as f32);
+                let scale = (window_dims.0/array_len as f32, window_dims.1/self.max_val as f32);
 
                 for (i, d) in data_read.iter().enumerate() {
                     draw.ellipse()
@@ -172,7 +205,20 @@ impl SortArray {
         }
     }
 
-    fn shuffle(data: Arc<RwLock<Vec<usize>>>, passes: u16) {
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.data.read().unwrap().len()
+    }
+
+    #[inline]
+    fn reset_arr_info(data_arc: Arc<RwLock<DataArrWrapper>>) {
+        let mut write = data_arc.write().unwrap();
+
+        write.active = None;
+        write.pivot = None;
+    }
+
+    fn shuffle(data: Arc<RwLock<DataArrWrapper>>, passes: u16) {
         let len = data.read().unwrap().len();
 
         for _ in 0..passes {
@@ -180,14 +226,28 @@ impl SortArray {
                 {
                     let mut data_write = data.write().unwrap();
                     data_write.swap(i, nannou::rand::random_range(0usize, len));
+                    data_write.active = Some(i);
                 }
                 thread::sleep(SWAP_SLEEP/len as u32);
             }
         }
     }
 
+    fn write_over(data_arc: Arc<RwLock<DataArrWrapper>>, overwrite_data: &[usize], start_index: usize, end_index: usize, sleep: Option<Duration>) {
+        assert!(end_index > start_index);
+        let len = end_index - start_index;
+        assert!(overwrite_data.len() == len);
+        assert!(data_arc.read().unwrap().len() >= overwrite_data.len());
 
-    fn bubble_sort(data_arc: Arc<RwLock<Vec<usize>>>) {
+        for (i, data_index) in (start_index..end_index).enumerate() {
+            data_arc.write().unwrap()[data_index] = overwrite_data[i];
+            if let Some(sleep_time) = sleep {
+                thread::sleep(sleep_time);
+            }
+        }
+    }
+
+    fn bubble_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
         let len = data_arc.read().unwrap().len();
 
         let mut sorted = false;
@@ -213,10 +273,10 @@ impl SortArray {
     }
 
 
-    fn quick_sort(data_arc: Arc<RwLock<Vec<usize>>>, low: usize, high: usize, data_len: usize) {
+    fn quick_sort(data_arc: Arc<RwLock<DataArrWrapper>>, low: usize, high: usize, data_len: u32) {
         // Lomuto partition scheme: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
         // Pretty much copied the pseudocode
-        fn partition(data_arc: Arc<RwLock<Vec<usize>>>, low: usize, high: usize, data_len: usize) -> usize {
+        fn partition(data_arc: Arc<RwLock<DataArrWrapper>>, low: usize, high: usize, data_len: u32) -> usize {
             let pivot = data_arc.read().unwrap()[high];
 
             let mut i = low;
@@ -224,7 +284,7 @@ impl SortArray {
                 if data_arc.read().unwrap()[j] < pivot {
                     data_arc.write().unwrap().swap(i, j);
                     i += 1;
-                    thread::sleep(QUICK_SLEEP/data_len as u32);
+                    thread::sleep(QUICK_SLEEP/data_len);
                 }
             }
 
@@ -243,7 +303,57 @@ impl SortArray {
         }
     }
 
-    fn insertion_sort(data_arc: Arc<RwLock<Vec<usize>>>) {
+    fn overwriting_quicksort(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, h: usize, data_len: u32) {
+        assert!(h > l);
+        assert!(h > 0);
+        let len = h - l;
+
+        if len < 2 {
+            return
+        }
+
+        let mut left = Vec::with_capacity(len);
+        let mut mid = vec![];
+        let mut right = Vec::with_capacity(len);
+        let pivot = data_arc.read().unwrap()[l + len/2];
+
+        for index in l..h {
+            let element = data_arc.read().unwrap()[index];
+
+            if element < pivot {
+                left.push(element);
+            } else if element > pivot {
+                right.push(element);
+            } else {
+                mid.push(element);
+            }
+        }
+
+        let lens = [left.len(), mid.len(), right.len()];
+
+        // Write partitioning
+        left.append(&mut mid);
+        left.append(&mut right);
+        Self::write_over(
+            data_arc.clone(),
+            left.as_slice(),
+            l,
+            h,
+            Some(QUICK_SLEEP/data_len)
+        );
+
+        if lens[0] > 0 {
+            Self::overwriting_quicksort(data_arc.clone(), l, l + lens[0], data_len);  // Sort lower
+        }
+        if lens[1] > 0 {
+            Self::overwriting_quicksort(data_arc.clone(), l + lens[0], l + lens[0] + lens[1], data_len);  // Sort mid
+        }
+        if lens[2] > 0 {
+            Self::overwriting_quicksort(data_arc.clone(), l + lens[0] + lens[1], l + lens[0] + lens[1] + lens[2], data_len);  // Sort right
+        }
+    }
+
+    fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
         let len = data_arc.read().unwrap().len();
         
         for i in 1..len {
@@ -261,6 +371,9 @@ impl SortArray {
     }
 }
 
+
+// Commands and options
+
 #[derive(Copy, Clone)]
 pub enum SortInstruction {
     Shuffle(u16),
@@ -268,8 +381,14 @@ pub enum SortInstruction {
     Reverse,
 
     BubbleSort,
-    QuickSort,
+    QuickSort(QuickSortType),
     InsertionSort,
+}
+
+#[derive(Copy, Clone)]
+pub enum QuickSortType {
+    LomutoPartitioning,
+    Overwriting,
 }
 
 #[derive(Clone, Copy)]

@@ -9,34 +9,10 @@ use nannou::{
 
 use crate::{tools, TWO_PI};
 
-mod shell_sort {
-    pub struct ShellSortGapsIter {
-        count: usize,
-    }
-
-    impl Default for ShellSortGapsIter {
-        fn default() -> ShellSortGapsIter {
-            ShellSortGapsIter {
-                count: 1,
-            }
-        }
-    }
-
-    impl Iterator for ShellSortGapsIter {
-        type Item = usize;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            // 2^k - 1
-            let next_val = (2_usize).pow(self.count as u32) - 1;
-            self.count += 1;
-
-            Some(next_val)
-        }
-    }
-}
 
 const SWAP_SLEEP: Duration = Duration::from_millis(1);
 const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len squared
+const SHELL_SLEEP: Duration = Duration::from_secs(300);
 const QUICK_SLEEP: Duration = Duration::from_secs(5);
 
 #[derive(Shrinkwrap)]
@@ -379,16 +355,36 @@ impl SortArray {
     }
 
     fn shell_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
-        use shell_sort::ShellSortGapsIter;
+        pub struct ShellSortGapsIter {      // Iterator to generate gaps
+            count: usize,
+        }
+
+        impl Default for ShellSortGapsIter {
+            fn default() -> ShellSortGapsIter {
+                ShellSortGapsIter {
+                    count: 1,
+                }
+            }
+        }
+
+        impl Iterator for ShellSortGapsIter {
+            type Item = usize;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                // 2^k - 1
+                let next_val = (2_usize).pow(self.count as u32) - 1;
+                self.count += 1;
+
+                Some(next_val)
+            }
+        }
 
         let len = data_arc.read().unwrap().len();
-        let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
+        let sleep_time = SHELL_SLEEP/len.pow(2) as u32;
 
         let gaps: Vec<usize> = ShellSortGapsIter::default().take_while(|i| *i < len).collect();
-        dbg!(&gaps);
 
         for gap in gaps.into_iter().rev() {
-            println!("Gap: {}", gap);
             for i in gap..len {
                 let temp = data_arc.read().unwrap()[i];
 

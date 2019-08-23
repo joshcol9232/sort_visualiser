@@ -112,6 +112,13 @@ impl SortArray {
                     Self::reset_arr_info(data_arc_cln);
                 }));
             },
+            SortInstruction::ShellSort => {
+                self.sort_thread = Some(thread::spawn(move || {
+                    Self::shell_sort(data_arc_cln.clone());
+                    Self::reset_arr_info(data_arc_cln);
+                }));
+            },
+
             SortInstruction::Reset => {
                 self.data.write().unwrap().sort_by(|a, b| a.cmp(b));
             },
@@ -355,6 +362,7 @@ impl SortArray {
 
     fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
         let len = data_arc.read().unwrap().len();
+        let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
         
         for i in 1..len {
             for j in (1..i+1).rev() {
@@ -365,7 +373,36 @@ impl SortArray {
                     }
                 }
                 data_arc.write().unwrap().swap(j, j-1);
-                thread::sleep(BUBBLE_SLEEP/len.pow(2) as u32);
+                thread::sleep(sleep_time);
+            }
+        }
+    }
+
+    fn shell_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
+        use shell_sort::ShellSortGapsIter;
+
+        let len = data_arc.read().unwrap().len();
+        let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
+
+        let gaps: Vec<usize> = ShellSortGapsIter::default().take_while(|i| *i < len).collect();
+        dbg!(&gaps);
+
+        for gap in gaps.into_iter().rev() {
+            println!("Gap: {}", gap);
+            for i in gap..len {
+                let temp = data_arc.read().unwrap()[i];
+
+                let mut j = i;
+                while j >= gap && data_arc.read().unwrap()[j - gap] > temp {
+                    {
+                        let mut write = data_arc.write().unwrap();
+                        write[j] = write[j - gap];
+                    }
+
+                    j -= gap;
+                    thread::sleep(sleep_time);
+                }
+                data_arc.write().unwrap()[j] = temp;
             }
         }
     }
@@ -383,6 +420,7 @@ pub enum SortInstruction {
     BubbleSort,
     QuickSort(QuickSortType),
     InsertionSort,
+    ShellSort,
 }
 
 #[derive(Copy, Clone)]

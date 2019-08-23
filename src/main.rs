@@ -11,7 +11,7 @@ use crate::sorting_array::{SortArray, SortInstruction, QuickSortType, DisplayMod
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DEFAULT_DATA_LEN: usize = 500;
+pub const DEFAULT_DATA_LEN: usize = 200;
 const MULTI_ARRAY_LEN: usize = 100;
 
 fn main() {
@@ -122,6 +122,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 // Key::Key4 => model.instruction(
                 //     SortInstruction::QuickSort(QuickSortType::Overwriting)
                 // ),
+                Key::Key4 => model.instruction(SortInstruction::ShellSort),
                 _ => ()
             }
         }

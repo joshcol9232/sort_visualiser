@@ -112,7 +112,8 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
 
                     model.set_to_multi_array(array_num);
                     model.current_display_mode = DisplayMode::Pixels;
-                }
+                },
+                Key::Q => model.instruction(SortInstruction::Stop),
 
                 Key::Key1 => model.instruction(SortInstruction::BubbleSort),
                 Key::Key2 => model.instruction(SortInstruction::InsertionSort),

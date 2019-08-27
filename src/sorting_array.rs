@@ -15,12 +15,20 @@ const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len 
 const SHELL_SLEEP: Duration = Duration::from_secs(300);
 const QUICK_SLEEP: Duration = Duration::from_secs(5);
 
+macro_rules! check_for_stop {
+    ($data_arc:expr) => {
+        if $data_arc.read().unwrap().sorted { break }
+    };
+}
+
+
 #[derive(Shrinkwrap)]
 #[shrinkwrap(mutable)]
 pub struct DataArrWrapper {
     #[shrinkwrap(main_field)] pub arr: Vec<usize>,
     pub active: Option<usize>,
     pub pivot: Option<usize>,
+    pub sorted: bool,
 }
 
 impl DataArrWrapper {
@@ -29,6 +37,7 @@ impl DataArrWrapper {
             arr,
             active: None,
             pivot: None,
+            sorted: true,
         }
     }
 }
@@ -54,12 +63,14 @@ impl SortArray {
         let data_arc_cln = Arc::clone(&self.data);
         match instruction {
             SortInstruction::Shuffle(rounds) => {
+                self.data.write().unwrap().sorted = false;
                 self.sort_thread = Some(thread::spawn(move || {
                     Self::shuffle(data_arc_cln.clone(), rounds);
                     Self::reset_arr_info(data_arc_cln);
                 }));
             },
             SortInstruction::BubbleSort => {
+                self.data.write().unwrap().sorted = false;
                 self.sort_thread = Some(thread::spawn(move || {
                     Self::bubble_sort(data_arc_cln.clone());
                     Self::reset_arr_info(data_arc_cln);
@@ -67,6 +78,7 @@ impl SortArray {
             },
             SortInstruction::QuickSort(partition_type) => {
                 let len = self.data.read().unwrap().len();
+                self.data.write().unwrap().sorted = false;
                 match partition_type {
                     QuickSortType::LomutoPartitioning => {
                         self.sort_thread = Some(thread::spawn(move || {
@@ -83,12 +95,14 @@ impl SortArray {
                 }
             },
             SortInstruction::InsertionSort => {
+                self.data.write().unwrap().sorted = false;
                 self.sort_thread = Some(thread::spawn(move || {
                     Self::insertion_sort(data_arc_cln.clone());
                     Self::reset_arr_info(data_arc_cln);
                 }));
             },
             SortInstruction::ShellSort => {
+                self.data.write().unwrap().sorted = false;
                 self.sort_thread = Some(thread::spawn(move || {
                     Self::shell_sort(data_arc_cln.clone());
                     Self::reset_arr_info(data_arc_cln);
@@ -96,10 +110,15 @@ impl SortArray {
             },
 
             SortInstruction::Reset => {
+                self.data.write().unwrap().sorted = true;
                 self.data.write().unwrap().sort_by(|a, b| a.cmp(b));
             },
             SortInstruction::Reverse => {
+                self.data.write().unwrap().sorted = false;
                 self.data.write().unwrap().reverse();
+            },
+            SortInstruction::Stop => {
+                self.data.write().unwrap().sorted = true;
             },
         }
     }
@@ -199,6 +218,7 @@ impl SortArray {
 
         write.active = None;
         write.pivot = None;
+        write.sorted = true;
     }
 
     fn shuffle(data: Arc<RwLock<DataArrWrapper>>, passes: u16) {
@@ -232,13 +252,14 @@ impl SortArray {
 
     fn bubble_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
         let len = data_arc.read().unwrap().len();
-
         let mut sorted = false;
 
-        while !sorted {
+        while !sorted && !data_arc.read().unwrap().sorted {
             sorted = true;
 
             for i in 0..len-1 {
+                check_for_stop!(data_arc);
+
                 let (d1, d2) = {
                     let read = data_arc.read().unwrap();
                     (read[i], read[i+1])
@@ -264,6 +285,8 @@ impl SortArray {
 
             let mut i = low;
             for j in low..high {
+                check_for_stop!(data_arc);
+
                 if data_arc.read().unwrap()[j] < pivot {
                     data_arc.write().unwrap().swap(i, j);
                     i += 1;
@@ -341,10 +364,11 @@ impl SortArray {
         let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
         
         for i in 1..len {
+            check_for_stop!(data_arc);
             for j in (1..i+1).rev() {
                 {
                     let read = data_arc.read().unwrap();
-                    if read[j-1] < read[j] {
+                    if read.sorted ||  read[j-1] < read[j] {
                         break
                     }
                 }
@@ -385,7 +409,9 @@ impl SortArray {
         let gaps: Vec<usize> = ShellSortGapsIter::default().take_while(|i| *i < len).collect();
 
         for gap in gaps.into_iter().rev() {
+            check_for_stop!(data_arc);
             for i in gap..len {
+                check_for_stop!(data_arc);
                 let temp = data_arc.read().unwrap()[i];
 
                 let mut j = i;
@@ -412,6 +438,7 @@ pub enum SortInstruction {
     Shuffle(u16),
     Reset,
     Reverse,
+    Stop,
 
     BubbleSort,
     QuickSort(QuickSortType),

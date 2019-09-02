@@ -14,6 +14,7 @@ const SWAP_SLEEP: Duration = Duration::from_millis(1);
 const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len squared
 const SHELL_SLEEP: Duration = Duration::from_secs(300);
 const QUICK_SLEEP: Duration = Duration::from_secs(5);
+const RADIX_SLEEP: Duration = Duration::from_secs(2);
 
 macro_rules! check_for_stop {
     ($data_arc:expr) => {
@@ -108,10 +109,16 @@ impl SortArray {
                     Self::reset_arr_info(data_arc_cln);
                 }));
             },
+            SortInstruction::RadixSort(base) => {
+                self.data.write().unwrap().sorted = false;
+                self.sort_thread = Some(thread::spawn(move || {
+                    Self::radix_lsd(data_arc_cln.clone(), base);
+                    Self::reset_arr_info(data_arc_cln);
+                }));
+            },
 
             SortInstruction::Reset => {
-                self.data.write().unwrap().sorted = true;
-                self.data.write().unwrap().sort_by(|a, b| a.cmp(b));
+                self.reset();
             },
             SortInstruction::Reverse => {
                 self.data.write().unwrap().sorted = false;
@@ -219,6 +226,12 @@ impl SortArray {
         write.active = None;
         write.pivot = None;
         write.sorted = true;
+    }
+
+    fn reset(&mut self) {
+        let mut write = self.data.write().unwrap();
+        write.sorted = true;
+        write.arr = (0..write.len()).collect();
     }
 
     fn shuffle(data: Arc<RwLock<DataArrWrapper>>, passes: u16) {
@@ -428,6 +441,68 @@ impl SortArray {
             }
         }
     }
+
+    fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
+        use std::collections::HashMap;
+        use radix::RadixNum;
+
+        #[inline]
+        fn get_max_digits(array: &[usize], base: usize) -> usize {
+            let mut largest = 0usize;
+
+            for item in array.iter() {
+                let item_digits = RadixNum::from(*item)
+                    .with_radix(base)
+                    .unwrap()
+                    .as_str()
+                    .len();
+
+                if item_digits > largest {
+                    largest = item_digits;
+                }
+            }
+            largest
+        }
+
+        #[inline]
+        fn get_digit_at(num: usize, i: usize, base: usize) -> usize {
+            (num/base.pow(i as u32)) % base
+        }
+
+        let mut current_digit = 0usize;
+        let (largest_digits, array_len) = {
+            let data_read = data_arc.read().unwrap();
+            (get_max_digits(&data_read, base), data_read.len())
+        };
+
+        for digit_num in 0..largest_digits {
+            // Counting sort
+            let mut buckets: HashMap<usize, Vec<usize>> = HashMap::new();
+
+            {
+                let data_read = data_arc.read().unwrap();
+
+                for num in data_read.iter() {
+                    let digit = get_digit_at(*num, digit_num, base);
+                    let bucket = buckets.entry(digit)
+                        .or_insert(Vec::with_capacity(array_len));
+                    
+                    bucket.push(*num);
+                }
+            }
+
+            let mut i = 0;
+            for key in 0..base {
+                if let Some(bucket) = buckets.get(&key) {
+                    for element in bucket.iter() {
+                        data_arc.write().unwrap()[i] = *element;
+                        i += 1;
+                        thread::sleep(RADIX_SLEEP/array_len as u32);
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -444,6 +519,7 @@ pub enum SortInstruction {
     QuickSort(QuickSortType),
     InsertionSort,
     ShellSort,
+    RadixSort(usize),
 }
 
 #[derive(Copy, Clone)]

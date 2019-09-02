@@ -36,6 +36,7 @@ Displays multiple arrays, spanning from the top to the bottom of the window. Eac
 **2** | Selection Sort.
 **3** | Quick Sort.
 **4** | Shell Sort.
+**5** | Radix LSD Sort (Base 10).
 
 #### Array functions:
 **Key** | **Sort**

@@ -8,6 +8,7 @@ edition = "2018"
 nannou = "0.10"
 shaderc = "0.5.1"
 shrinkwraprs = "0.2.1"
+radix = "0.5"
 
 [features]
 shaderc_fix = ["shaderc/build-from-source"]

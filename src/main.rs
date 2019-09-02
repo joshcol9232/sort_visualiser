@@ -14,7 +14,7 @@ pub const TWO_PI: f32 = 2.0 * PI;
 pub const DEFAULT_DATA_LEN: usize = 300;
 const MULTI_ARRAY_LEN: usize = 100;
 
-const RADIX_SORT_BASE: usize = 2;  // Supports radix between (inclusive) 2 to 36.
+const RADIX_SORT_BASE: usize = 10;  // Supports radix between (inclusive) 2 to 36.
 
 fn main() {
     nannou::app(model)

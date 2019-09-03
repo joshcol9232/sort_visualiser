@@ -163,25 +163,26 @@ impl SortArray {
                 }
             },
             DisplayMode::Line => {
-                /* Polyline is broken in nannou atm, so waiting for change to lyon which they are implementing.
-                    see: https://github.com/nannou-org/nannou/issues/185
+                // use nannou::geom::vertex;
+                // use nannou::color::{Rgba, Hsv};
+                // // Polyline is broken in nannou atm, so waiting for change to lyon which they are implementing.
+                //  //   see: https://github.com/nannou-org/nannou/issues/185
                 
-                let mut points: Vec<vertex::Srgba> = Vec::with_capacity(DATA_LEN);
-                let scale = (window_dims.0/data_read.len() as f32, window_dims.1/self.max_val as f32);
+                // let mut points: Vec<vertex::Srgba> = Vec::with_capacity(self.max_val);
+                // let scale = (window_dims.0/data_read.len() as f32, window_dims.1/self.max_val as f32);
                 
-                for (i, d) in data_read.iter().enumerate() {
-                    let col = self.get_color(i, d, 360.0, 0.0);
-                    points.push(
-                        vertex::Srgba(
-                            [(i as f32 * scale.0) + scale.0/2.0 + transform.0, (*d as f32 + 1.0) * scale.1 + transform.1].into(),
-                            col.into()
-                        )
-                    );
-                }
+                // for (i, d) in data_read.iter().enumerate() {
+                //     let col = Rgba::from(Hsv::new(*d as f32/self.max_val as f32, 1.0, 1.0));
+                //     points.push(
+                //         vertex::Srgba(
+                //             [(i as f32 * scale.0) + scale.0/2.0 + transform.0, (*d as f32 + 1.0) * scale.1 + transform.1].into(),
+                //             col.into()
+                //         )
+                //     );
+                // }
 
-                draw.polyline()
-                    .vertices(1.0, points);
-                */
+                // draw.polyline()
+                //     .vertices(1.0, points);
             },
             DisplayMode::Dots => {
                 let scale = (window_dims.0/array_len as f32, window_dims.1/self.max_val as f32);
@@ -423,7 +424,14 @@ impl SortArray {
             for key in 0..base {
                 if let Some(bucket) = buckets.get(&key) {
                     for element in bucket.iter() {
-                        data_arc.write().unwrap()[i] = *element;
+                        {
+                            let mut write = data_arc.write().unwrap();
+                            write[i] = *element;
+                            if write.sorted {
+                                return
+                            }
+                        }
+                        
                         i += 1;
                         thread::sleep(RADIX_SLEEP/array_len as u32);
                     }

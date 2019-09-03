@@ -100,6 +100,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                         Key::C => model.current_display_mode = DisplayMode::Circle,
                         Key::B => model.current_display_mode = DisplayMode::Bars,
                         Key::D => model.current_display_mode = DisplayMode::Dots,
+                        // Key::L => model.current_display_mode = DisplayMode::Line,
                         _ => ()
                     }
                 },

@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 nannou = "0.10"
-shaderc = "0.5.1"
+shaderc = "0.5"
 shrinkwraprs = "0.2.1"
 radix = "0.5"
 

@@ -11,7 +11,7 @@ use crate::sorting_array::{SortArray, SortInstruction, QuickSortType, DisplayMod
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DEFAULT_DATA_LEN: usize = 300;
+pub const DEFAULT_DATA_LEN: usize = 400;
 const MULTI_ARRAY_LEN: usize = 100;
 
 const RADIX_SORT_BASE: usize = 10;  // Supports radix between (inclusive) 2 to 36.

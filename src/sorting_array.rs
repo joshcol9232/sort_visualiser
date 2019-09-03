@@ -86,12 +86,6 @@ impl SortArray {
                             Self::quick_sort(data_arc_cln.clone(), 0, len-1, len as u32);
                             Self::reset_arr_info(data_arc_cln);
                         }));
-                    },
-                    QuickSortType::Overwriting => {
-                        self.sort_thread = Some(thread::spawn(move || {
-                            Self::overwriting_quicksort(data_arc_cln.clone(), 0, len, len as u32);
-                            Self::reset_arr_info(data_arc_cln);
-                        }));
                     }
                 }
             },
@@ -249,20 +243,6 @@ impl SortArray {
         }
     }
 
-    fn write_over(data_arc: Arc<RwLock<DataArrWrapper>>, overwrite_data: &[usize], start_index: usize, end_index: usize, sleep: Option<Duration>) {
-        assert!(end_index > start_index);
-        let len = end_index - start_index;
-        assert!(overwrite_data.len() == len);
-        assert!(data_arc.read().unwrap().len() >= overwrite_data.len());
-
-        for (i, data_index) in (start_index..end_index).enumerate() {
-            data_arc.write().unwrap()[data_index] = overwrite_data[i];
-            if let Some(sleep_time) = sleep {
-                thread::sleep(sleep_time);
-            }
-        }
-    }
-
     fn bubble_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
         let len = data_arc.read().unwrap().len();
         let mut sorted = false;
@@ -288,7 +268,6 @@ impl SortArray {
             }
         }
     }
-
 
     fn quick_sort(data_arc: Arc<RwLock<DataArrWrapper>>, low: usize, high: usize, data_len: u32) {
         // Lomuto partition scheme: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
@@ -319,56 +298,6 @@ impl SortArray {
             if p < high {
                 Self::quick_sort(data_arc.clone(), p + 1, high, data_len);
             }   
-        }
-    }
-
-    fn overwriting_quicksort(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, h: usize, data_len: u32) {
-        assert!(h > l);
-        assert!(h > 0);
-        let len = h - l;
-
-        if len < 2 {
-            return
-        }
-
-        let mut left = Vec::with_capacity(len);
-        let mut mid = vec![];
-        let mut right = Vec::with_capacity(len);
-        let pivot = data_arc.read().unwrap()[l + len/2];
-
-        for index in l..h {
-            let element = data_arc.read().unwrap()[index];
-
-            if element < pivot {
-                left.push(element);
-            } else if element > pivot {
-                right.push(element);
-            } else {
-                mid.push(element);
-            }
-        }
-
-        let lens = [left.len(), mid.len(), right.len()];
-
-        // Write partitioning
-        left.append(&mut mid);
-        left.append(&mut right);
-        Self::write_over(
-            data_arc.clone(),
-            left.as_slice(),
-            l,
-            h,
-            Some(QUICK_SLEEP/data_len)
-        );
-
-        if lens[0] > 0 {
-            Self::overwriting_quicksort(data_arc.clone(), l, l + lens[0], data_len);  // Sort lower
-        }
-        if lens[1] > 0 {
-            Self::overwriting_quicksort(data_arc.clone(), l + lens[0], l + lens[0] + lens[1], data_len);  // Sort mid
-        }
-        if lens[2] > 0 {
-            Self::overwriting_quicksort(data_arc.clone(), l + lens[0] + lens[1], l + lens[0] + lens[1] + lens[2], data_len);  // Sort right
         }
     }
 
@@ -469,7 +398,6 @@ impl SortArray {
             (num/base.pow(i as u32)) % base
         }
 
-        let mut current_digit = 0usize;
         let (largest_digits, array_len) = {
             let data_read = data_arc.read().unwrap();
             (get_max_digits(&data_read, base), data_read.len())
@@ -525,7 +453,6 @@ pub enum SortInstruction {
 #[derive(Copy, Clone)]
 pub enum QuickSortType {
     LomutoPartitioning,
-    Overwriting,
 }
 
 #[derive(Clone, Copy)]

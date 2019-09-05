@@ -127,7 +127,8 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 //     SortInstruction::QuickSort(QuickSortType::Overwriting)
                 // ),
                 Key::Key4 => model.instruction(SortInstruction::ShellSort),
-                Key::Key5 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
+                Key::Key5 => model.instruction(SortInstruction::CombSort),
+                Key::Key6 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
                 _ => ()
             }
         }

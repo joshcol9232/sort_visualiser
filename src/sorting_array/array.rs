@@ -8,7 +8,7 @@ use nannou::{
 };
 
 use crate::{tools, TWO_PI};
-
+use super::commands::*;
 
 const SWAP_SLEEP: Duration = Duration::from_millis(1);
 const BUBBLE_SLEEP: Duration = Duration::from_secs(40);    // For 1 element/len squared
@@ -19,6 +19,38 @@ const RADIX_SLEEP: Duration = Duration::from_secs(2);
 macro_rules! check_for_stop {
     ($data_arc:expr) => {
         if $data_arc.read().unwrap().sorted { break }
+    };
+}
+
+macro_rules! start_sort_thread {
+    ($self:expr, $data_arc:expr, $operation:block) => {
+        $data_arc.write().unwrap().sorted = false;
+        $self.sort_thread = Some(thread::spawn(move || {
+            $operation;
+            SortArray::reset_arr_info($data_arc);
+        }));
+    };
+}
+
+// Duplicate code in shell sort and comb sort. Not a function because of borrowing issues.
+macro_rules! comb {
+    ($data_arc:expr, $gap:expr, $len:expr, $sleep_time:expr) => {
+        for i in $gap..$len {
+            check_for_stop!($data_arc.clone());
+            let temp = $data_arc.read().unwrap()[i];
+
+            let mut j = i;
+            while j >= $gap && $data_arc.read().unwrap()[j - $gap] > temp {
+                {
+                    let mut write = $data_arc.write().unwrap();
+                    write[j] = write[j - $gap];
+                }
+
+                j -= $gap;
+                thread::sleep($sleep_time);
+            }
+            $data_arc.write().unwrap()[j] = temp;
+        }
     };
 }
 
@@ -64,51 +96,45 @@ impl SortArray {
         let data_arc_cln = Arc::clone(&self.data);
         match instruction {
             SortInstruction::Shuffle(rounds) => {
-                self.data.write().unwrap().sorted = false;
-                self.sort_thread = Some(thread::spawn(move || {
+                start_sort_thread!(self, data_arc_cln, {
                     Self::shuffle(data_arc_cln.clone(), rounds);
-                    Self::reset_arr_info(data_arc_cln);
-                }));
+                });
             },
             SortInstruction::BubbleSort => {
-                self.data.write().unwrap().sorted = false;
-                self.sort_thread = Some(thread::spawn(move || {
+                start_sort_thread!(self, data_arc_cln, {
                     Self::bubble_sort(data_arc_cln.clone());
-                    Self::reset_arr_info(data_arc_cln);
-                }));
+                });
             },
             SortInstruction::QuickSort(partition_type) => {
                 let len = self.data.read().unwrap().len();
-                self.data.write().unwrap().sorted = false;
-                match partition_type {
-                    QuickSortType::LomutoPartitioning => {
-                        self.sort_thread = Some(thread::spawn(move || {
+
+                start_sort_thread!(self, data_arc_cln, {
+                    match partition_type {
+                        QuickSortType::LomutoPartitioning => {
                             Self::quick_sort(data_arc_cln.clone(), 0, len-1, len as u32);
-                            Self::reset_arr_info(data_arc_cln);
-                        }));
+                        }
                     }
-                }
+                });
             },
             SortInstruction::InsertionSort => {
-                self.data.write().unwrap().sorted = false;
-                self.sort_thread = Some(thread::spawn(move || {
+                start_sort_thread!(self, data_arc_cln, {
                     Self::insertion_sort(data_arc_cln.clone());
-                    Self::reset_arr_info(data_arc_cln);
-                }));
+                });
             },
             SortInstruction::ShellSort => {
-                self.data.write().unwrap().sorted = false;
-                self.sort_thread = Some(thread::spawn(move || {
+                start_sort_thread!(self, data_arc_cln, {
                     Self::shell_sort(data_arc_cln.clone());
-                    Self::reset_arr_info(data_arc_cln);
-                }));
+                });
+            },
+            SortInstruction::CombSort => {
+                start_sort_thread!(self, data_arc_cln, {
+                    Self::comb_sort(data_arc_cln.clone());
+                });
             },
             SortInstruction::RadixSort(base) => {
-                self.data.write().unwrap().sorted = false;
-                self.sort_thread = Some(thread::spawn(move || {
+                start_sort_thread!(self, data_arc_cln, {
                     Self::radix_lsd(data_arc_cln.clone(), base);
-                    Self::reset_arr_info(data_arc_cln);
-                }));
+                });
             },
 
             SortInstruction::Reset => {
@@ -353,23 +379,21 @@ impl SortArray {
 
         for gap in gaps.into_iter().rev() {
             check_for_stop!(data_arc);
-            for i in gap..len {
-                check_for_stop!(data_arc);
-                let temp = data_arc.read().unwrap()[i];
-
-                let mut j = i;
-                while j >= gap && data_arc.read().unwrap()[j - gap] > temp {
-                    {
-                        let mut write = data_arc.write().unwrap();
-                        write[j] = write[j - gap];
-                    }
-
-                    j -= gap;
-                    thread::sleep(sleep_time);
-                }
-                data_arc.write().unwrap()[j] = temp;
-            }
+            comb!(data_arc, gap, len, sleep_time);
         }
+    }
+
+    fn comb_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
+        let len = data_arc.read().unwrap().len();
+        let mut comb_len = len/2;
+
+        let sleep_time = SHELL_SLEEP/len.pow(2) as u32;
+
+        while comb_len >= 1 {
+            check_for_stop!(data_arc);
+            comb!(data_arc, comb_len, len, sleep_time);
+            comb_len /= 2;
+        }    
     }
 
     fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
@@ -438,42 +462,5 @@ impl SortArray {
                 }
             }
         }
-    }
-}
-
-
-// Commands and options
-
-#[derive(Copy, Clone)]
-pub enum SortInstruction {
-    Shuffle(u16),
-    Reset,
-    Reverse,
-    Stop,
-
-    BubbleSort,
-    QuickSort(QuickSortType),
-    InsertionSort,
-    ShellSort,
-    RadixSort(usize),
-}
-
-#[derive(Copy, Clone)]
-pub enum QuickSortType {
-    LomutoPartitioning,
-}
-
-#[derive(Clone, Copy)]
-pub enum DisplayMode {
-    Bars,
-    Circle,
-    Line,
-    Dots,
-    Pixels,
-}
-
-impl Default for DisplayMode {
-    fn default() -> DisplayMode {
-        DisplayMode::Circle
     }
 }

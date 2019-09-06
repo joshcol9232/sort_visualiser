@@ -16,13 +16,13 @@ const SHELL_SLEEP: Duration = Duration::from_secs(300);
 const QUICK_SLEEP: Duration = Duration::from_secs(5);
 const RADIX_SLEEP: Duration = Duration::from_secs(2);
 
-macro_rules! check_for_stop {
+macro_rules! check_for_stop {   // Place inside loop
     ($data_arc:expr) => {
         if $data_arc.read().unwrap().sorted { break }
     };
 }
 
-macro_rules! start_sort_thread {
+macro_rules! start_sort_thread {    // Starts a sorting thread (common pattern)
     ($self:expr, $data_arc:expr, $operation:block) => {
         $data_arc.write().unwrap().sorted = false;
         $self.sort_thread = Some(thread::spawn(move || {
@@ -57,7 +57,7 @@ macro_rules! comb {
 
 #[derive(Shrinkwrap)]
 #[shrinkwrap(mutable)]
-pub struct DataArrWrapper {
+pub struct DataArrWrapper {     // Wrapper arround array that is passed to sorting thread, containing info about current sort.
     #[shrinkwrap(main_field)] pub arr: Vec<usize>,
     pub active: Option<usize>,
     pub pivot: Option<usize>,
@@ -85,13 +85,14 @@ impl SortArray {
     pub fn new(num_of_lines: usize) -> SortArray {
         SortArray {
             data: Arc::new(RwLock::new(
-                DataArrWrapper::new((0..num_of_lines).collect())
-            )),
+                DataArrWrapper::new((0..num_of_lines).collect())    // Make an array of incrementing numbers up to the length of the array.
+            )),                                                     // Then when drawing you can scale it however you want.
             max_val: num_of_lines,
             sort_thread: None,
         }
     }
 
+    // Easier to handle in here rather than in main
     pub fn instruction(&mut self, instruction: SortInstruction) {
         let data_arc_cln = Arc::clone(&self.data);
         match instruction {
@@ -221,13 +222,13 @@ impl SortArray {
                 }
             },
             DisplayMode::Pixels => {
-                let scale = (window_dims.0/max_index as f32, window_dims.1/self.max_val as f32);
+                let scale = (window_dims.0/self.max_val as f32, window_dims.1/max_index as f32);
 
-                let x = (index as f32 + 0.5) * scale.0;
+                let y = (index as f32 + 0.5) * scale.1;
 
                 for (i, d) in data_read.iter().enumerate() {
                     draw.rect()
-                        .x_y(transform.0 + x, transform.1 + (i as f32 + 0.5) * scale.1)
+                        .x_y(transform.0 + (i as f32 + 0.5) * scale.0, transform.1 + y)
                         .w_h(scale.0, scale.1)
                         .hsv((1.0 - (*d as f32/self.max_val as f32))/3.0, 1.0, 1.0);
                 }

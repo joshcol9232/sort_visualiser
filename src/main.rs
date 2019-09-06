@@ -110,8 +110,10 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                     }
 
                     // Make it so that each pixel is square.
-                    let pixel_height = model.window_dims.1/model.array_len as f32;
-                    let array_num = (model.window_dims.0/pixel_height).ceil() as usize;
+                    println!("Array len: {}", model.array_len);
+                    let pixel_size = model.window_dims.1/model.array_len as f32;
+                    let array_num = (model.window_dims.0/pixel_size).floor() as usize;
+                    println!("{}", array_num as f32 * pixel_size);
 
                     model.set_to_multi_array(array_num);
                     model.current_display_mode = DisplayMode::Pixels;

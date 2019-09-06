@@ -22,7 +22,7 @@ Displays array as dots:
 
 #### Pixels:
 
-Displays multiple arrays, spanning from the top to the bottom of the window. Each column of pixels is a seperate array.
+Displays multiple arrays, spanning from the left to the right of the window. Each row of pixels is a seperate array.
 
 <img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/pixel_vis.png" alt="Pixel Visualisation" width="475" height="474">
 

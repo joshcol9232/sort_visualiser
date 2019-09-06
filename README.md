@@ -15,7 +15,7 @@ Displays array as a row of bars:
 
 #### Dots:
 
-Displays array as dots:
+Displays array as dots (looks good with quick sort):
 
 <img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/dot_vis.png" alt="Dot Visualisation" width="475" height="474">
 

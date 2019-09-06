@@ -223,7 +223,6 @@ impl SortArray {
             },
             DisplayMode::Pixels => {
                 let scale = (window_dims.0/self.max_val as f32, window_dims.1/max_index as f32);
-
                 let y = (index as f32 + 0.5) * scale.1;
 
                 for (i, d) in data_read.iter().enumerate() {

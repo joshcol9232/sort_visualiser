@@ -9,6 +9,7 @@ nannou = "0.10"
 shaderc = "0.5"
 shrinkwraprs = "0.2.1"
 radix = "0.5"
+rayon = "1.2"
 
 [features]
 shaderc_fix = ["shaderc/build-from-source"]

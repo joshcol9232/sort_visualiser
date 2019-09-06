@@ -39,6 +39,7 @@ impl Model {
     }
 
     fn display(&self, draw: &Draw, transform: (f32, f32)) {
+        
         for (i, arr) in self.arrays.iter().enumerate() {
             arr.display(draw, i, self.arrays.len(), arr.len(), self.current_display_mode, self.window_dims, transform);
         }
@@ -52,13 +53,11 @@ impl Model {
 
     fn set_to_multi_array(&mut self, len: usize) {
         self.arrays.clear();
-        self.array_len = MULTI_ARRAY_LEN;
         for _ in 0..len {
             self.arrays.push(SortArray::new(self.array_len));
         }
     }
 }
-
 
 fn model(app: &App) -> Model {
     app.new_window()
@@ -105,15 +104,11 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                     }
                 },
                 Key::P => {     // Pixel display mode (multi-array)
-                    if model.arrays.len() == 1 {
-                        model.set_to_single_array();
-                    }
-
+                    model.array_len = MULTI_ARRAY_LEN;
                     // Make it so that each pixel is square.
-                    println!("Array len: {}", model.array_len);
-                    let pixel_size = model.window_dims.1/model.array_len as f32;
-                    let array_num = (model.window_dims.0/pixel_size).floor() as usize;
-                    println!("{}", array_num as f32 * pixel_size);
+                    let pixel_size = model.window_dims.0/model.array_len as f32;
+                    println!("{}", pixel_size);
+                    let array_num = (model.window_dims.1/pixel_size).floor() as usize;
 
                     model.set_to_multi_array(array_num);
                     model.current_display_mode = DisplayMode::Pixels;

@@ -20,6 +20,8 @@ macro_rules! comb {
             while j >= $gap && $data_arc.read().unwrap()[j - $gap] > temp {
                 {
                     let mut write = $data_arc.write().unwrap();
+                    write.active = Some(j - $gap);
+                    write.active_2 = Some(j);
                     write[j] = write[j - $gap];
                 }
 
@@ -108,7 +110,10 @@ pub fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     
     for i in 1..len {
         check_for_stop!(data_arc);
+        data_arc.write().unwrap().pivot = Some(i);
+
         for j in (1..i+1).rev() {
+            data_arc.write().unwrap().active = Some(j);
             {
                 let read = data_arc.read().unwrap();
                 if read.sorted ||  read[j-1] < read[j] {
@@ -224,6 +229,7 @@ pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
                 for element in bucket.iter() {
                     {
                         let mut write = data_arc.write().unwrap();
+                        write.active = Some(i);
                         write[i] = *element;
                         if write.sorted {
                             return

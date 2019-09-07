@@ -1,6 +1,11 @@
 # Sorting Visualiser
 
 ### Visualisations:
+
+There are two types of visualisations; ones that use a single array, and ones that use multiple arrays. I will mark ones that use multiple arrays with an (M).
+You can switch between visualisations while sorting IF you are switching to a visualisation of the same type.
+More visualisations are to come in the future. :)
+
 #### Circle:
 
 Displays array in a circle:
@@ -33,7 +38,7 @@ Displays array as dots (looks good with quick sort):
 
 Exact same colouring as the bar visualisation.
 
-#### Pixels:
+#### Pixels (M):
 
 Displays multiple arrays, spanning from the left to the right of the window. Each row of pixels is a seperate array.
 
@@ -49,10 +54,15 @@ Does not display active elements etc because it would be a bit too cluttered.
 --- | ---
 **1** | Bubble Sort.
 **2** | Selection Sort.
-**3** | Quicksort.
-**4** | Shell Sort.
-**5** | Comb Sort (very similar to shell sort).
-**6** | Radix LSD Sort (Base 10).
+**3** | Cocktail Shaker Sort.
+**4** | Quicksort (Lomuto partitioning).
+**5** | Shell Sort.
+**6** | Comb Sort (very similar to shell sort).
+**7** | Radix LSD Sort (Base 10).
+
+You can do multiple sorts at once but be careful since this can ruin the array (however you can reset by pressing **R**).
+
+NOTE: Due to Quicksort's Lomuto partitioning scheme, sorting the sorted or reversed array is incredibly slow, and is a key problem with this partitioning scheme, since it uses the last element as the pivot, rather than the middle.
 
 #### Array functions:
 **Key** | **Sort**
@@ -62,6 +72,8 @@ Does not display active elements etc because it would be a bit too cluttered.
 **I** | Invert/reverse array.
 **Q** | Cancel current sort.
 
+Resetting the array regenerates all of the elements in the array, so if you ever have any problems with the array, for example duplicate array elements due to running multiple sorts, then reset the array and you should be good to go.
+
 #### Display modes:
 **Key** | **Sort**
 --- | ---
@@ -69,3 +81,19 @@ Does not display active elements etc because it would be a bit too cluttered.
 **B** | Bars.
 **D** | Dots.
 **P** | Pixels.
+
+### Configuration:
+
+Radix sort bases and sleep time for each sort can be changed, 
+
+### Compiling and Running:
+
+Install rust (rustup + cargo), then change directory to this folder, and run:
+
+```bash
+cargo build --release
+```
+
+Then you will find the executable in `target/release/sort_visualiser`.
+
+If you have a problem with linking, so `shaderc-sys` cannot compile, then build it with the `--features=shaderc_fix` flag.

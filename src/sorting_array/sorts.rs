@@ -9,6 +9,12 @@ const SHELL_SLEEP: Duration = Duration::from_secs(400);
 const QUICK_SLEEP: Duration = Duration::from_secs(6);
 const RADIX_SLEEP: Duration = Duration::from_secs(2);
 
+macro_rules! check_for_stop {   // Place inside loop
+    ($data_arc:expr) => {
+        if $data_arc.read().unwrap().sorted { break }
+    };
+}
+
 // Duplicate code in shell sort and comb sort. Not a function because of borrowing issues.
 macro_rules! comb {
     ($data_arc:expr, $gap:expr, $len:expr, $sleep_time:expr) => {
@@ -33,34 +39,59 @@ macro_rules! comb {
     };
 }
 
-macro_rules! check_for_stop {   // Place inside loop
-    ($data_arc:expr) => {
-        if $data_arc.read().unwrap().sorted { break }
+// Shared by bubble sort and cocktail shaker sort.
+macro_rules! bubble {
+    ($data_arc:expr, $swapped:expr, $i:expr, $sleep_time:expr) => {
+        $data_arc.write().unwrap().active = Some($i+1);
+
+        let (d1, d2) = {
+            let read = $data_arc.read().unwrap();
+            (read[$i], read[$i+1])
+        };
+        if d1 > d2 {
+            {
+                let mut data_write = $data_arc.write().unwrap();
+                data_write.swap($i, $i+1);
+            }
+            $swapped = true;
+            thread::sleep($sleep_time);
+        }
     };
 }
 
 pub fn bubble_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     let len = data_arc.read().unwrap().len();
-    let mut sorted = false;
+    let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
+    let mut swapped = true;
 
-    while !sorted && !data_arc.read().unwrap().sorted {
-        sorted = true;
+    while swapped && !data_arc.read().unwrap().sorted {
+        swapped = false;
 
         for i in 0..len-1 {
             check_for_stop!(data_arc);
-            data_arc.write().unwrap().active = Some(i+1);
+            bubble!(data_arc, swapped, i, sleep_time);
+        }
+    }
+}
 
-            let (d1, d2) = {
-                let read = data_arc.read().unwrap();
-                (read[i], read[i+1])
-            };
-            if d1 > d2 {
-                {
-                    let mut data_write = data_arc.write().unwrap();
-                    data_write.swap(i, i+1);
-                }
-                sorted = false;
-                thread::sleep(BUBBLE_SLEEP/len.pow(2) as u32);
+pub fn cocktail_shaker_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
+    let len = data_arc.read().unwrap().len();
+    let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
+    let mut swapped = true;    // if an element was swapped
+
+    while swapped && !data_arc.read().unwrap().sorted {
+        swapped = false;
+
+        for i in 0..len-1 {
+            check_for_stop!(data_arc);
+            bubble!(data_arc, swapped, i, sleep_time);
+        }
+
+        if swapped {
+            swapped = false;
+            for i in (1..len-1).rev() {
+                check_for_stop!(data_arc);
+                bubble!(data_arc, swapped, i, sleep_time);
             }
         }
     }

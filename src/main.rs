@@ -12,7 +12,7 @@ use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
 pub const DEFAULT_DATA_LEN: usize = 200;
-const MULTI_ARRAY_LEN: usize = 100;
+const MULTI_ARRAY_LEN: usize = 200;
 const RADIX_SORT_BASE: usize = 10;  // Supports radix between (inclusive) 2 to 36.
 
 fn main() {
@@ -114,15 +114,16 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
 
                 Key::Key1 => model.instruction(SortInstruction::BubbleSort),
                 Key::Key2 => model.instruction(SortInstruction::InsertionSort),
-                Key::Key3 => model.instruction(
+                Key::Key3 => model.instruction(SortInstruction::CocktailShakerSort),
+                Key::Key4 => model.instruction(
                     SortInstruction::QuickSort(QuickSortType::LomutoPartitioning)
                 ),
                 // Key::Key4 => model.instruction(
                 //     SortInstruction::QuickSort(QuickSortType::Overwriting)
                 // ),
-                Key::Key4 => model.instruction(SortInstruction::ShellSort),
-                Key::Key5 => model.instruction(SortInstruction::CombSort),
-                Key::Key6 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
+                Key::Key5 => model.instruction(SortInstruction::ShellSort),
+                Key::Key6 => model.instruction(SortInstruction::CombSort),
+                Key::Key7 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
                 _ => ()
             }
         }

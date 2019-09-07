@@ -105,6 +105,11 @@ impl SortArray {
                     sorts::insertion_sort(data_arc_cln.clone());
                 });
             },
+            SortInstruction::CocktailShakerSort => {
+                start_sort_thread!(self, data_arc_cln, {
+                    sorts::cocktail_shaker_sort(data_arc_cln.clone());
+                });
+            },
             SortInstruction::ShellSort => {
                 start_sort_thread!(self, data_arc_cln, {
                     sorts::shell_sort(data_arc_cln.clone());

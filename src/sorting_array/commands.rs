@@ -7,6 +7,7 @@ pub enum SortInstruction {
     Stop,
 
     BubbleSort,
+    CocktailShakerSort,
     QuickSort(QuickSortType),
     InsertionSort,
     ShellSort,

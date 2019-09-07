@@ -27,7 +27,7 @@ With Lomuto partitioning quicksort (default quicksort implemented), the two acti
 
 #### Dots:
 
-Displays array as dots:
+Displays array as dots (looks good with quick sort):
 
 <img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/dot_vis.png" alt="Dot Visualisation" width="475" height="474">
 

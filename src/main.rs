@@ -11,9 +11,8 @@ use crate::sorting_array::{SortArray, SortInstruction, QuickSortType, DisplayMod
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DEFAULT_DATA_LEN: usize = 400;
+pub const DEFAULT_DATA_LEN: usize = 200;
 const MULTI_ARRAY_LEN: usize = 100;
-
 const RADIX_SORT_BASE: usize = 10;  // Supports radix between (inclusive) 2 to 36.
 
 fn main() {
@@ -39,7 +38,6 @@ impl Model {
     }
 
     fn display(&self, draw: &Draw, transform: (f32, f32)) {
-        
         for (i, arr) in self.arrays.iter().enumerate() {
             arr.display(draw, i, self.arrays.len(), arr.len(), self.current_display_mode, self.window_dims, transform);
         }
@@ -107,7 +105,6 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                     model.array_len = MULTI_ARRAY_LEN;
                     // Make it so that each pixel is square.
                     let pixel_size = model.window_dims.0/model.array_len as f32;
-                    println!("{}", pixel_size);
                     let array_num = (model.window_dims.1/pixel_size).floor() as usize;
 
                     model.set_to_multi_array(array_num);

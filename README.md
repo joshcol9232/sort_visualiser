@@ -13,12 +13,25 @@ Displays array as a row of bars:
 
 <img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/bar_vis.png" alt="Bar Visualisation" width="475" height="474">
 
+Coloring:
+
+**Element** | **Colour**
+--- | ---
+Active | Blue
+Secondary Active (used when comparing elements) | Blue
+Pivot (Quicksort) | Purple
+
+Colours may change in the future.
+
+With Lomuto partitioning quicksort (default quicksort implemented), the two active elements show the area where the elements are collecting that are bigger than the pivot. Once it reaches the end of the partition it moves the pivot to before that area.
+
 #### Dots:
 
 Displays array as dots:
 
 <img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/dot_vis.png" alt="Dot Visualisation" width="475" height="474">
 
+Exact same colouring as the bar visualisation.
 
 #### Pixels:
 
@@ -28,13 +41,15 @@ Displays multiple arrays, spanning from the left to the right of the window. Eac
 
 <img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/pixel_vis_shuffled.png" alt="Pixel Visualisation Shuffled" width="475" height="474">
 
+Does not display active elements etc because it would be a bit too cluttered.
+
 ### Controls:
 #### Sorts:
 **Key** | **Sort**
 --- | ---
 **1** | Bubble Sort.
 **2** | Selection Sort.
-**3** | Quick Sort.
+**3** | Quicksort.
 **4** | Shell Sort.
 **5** | Comb Sort (very similar to shell sort).
 **6** | Radix LSD Sort (Base 10).

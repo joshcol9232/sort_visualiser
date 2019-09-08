@@ -1,17 +1,30 @@
 use super::DataArrWrapper;
 
 use std::sync::{Arc, RwLock};
-use std::time::Duration;
 use std::thread;
+use std::time::Duration;
 
-const BUBBLE_SLEEP: Duration = Duration::from_secs(80);    // For 1 element/len squared
+// NOTE: Sorts of the same/simmilar time complexity will use the same sleep time.
+const BUBBLE_SLEEP: Duration = Duration::from_secs(80); // For 1 element/len squared
 const SHELL_SLEEP: Duration = Duration::from_secs(400);
 const QUICK_SLEEP: Duration = Duration::from_secs(6);
 const RADIX_SLEEP: Duration = Duration::from_secs(2);
 
-macro_rules! check_for_stop {   // Place inside loop
+macro_rules! check_for_stop {
+    // Returns from function if sorted
     ($data_arc:expr) => {
-        if $data_arc.read().unwrap().sorted { break }
+        if $data_arc.read().unwrap().sorted {
+            return;
+        }
+    };
+}
+
+macro_rules! check_for_stop_break {
+    // Only does a break, so exits loop.
+    ($data_arc:expr) => {
+        if $data_arc.read().unwrap().sorted {
+            break;
+        }
     };
 }
 
@@ -42,16 +55,16 @@ macro_rules! comb {
 // Shared by bubble sort and cocktail shaker sort.
 macro_rules! bubble {
     ($data_arc:expr, $swapped:expr, $i:expr, $sleep_time:expr) => {
-        $data_arc.write().unwrap().active = Some($i+1);
+        $data_arc.write().unwrap().active = Some($i + 1);
 
         let (d1, d2) = {
             let read = $data_arc.read().unwrap();
-            (read[$i], read[$i+1])
+            (read[$i], read[$i + 1])
         };
         if d1 > d2 {
             {
                 let mut data_write = $data_arc.write().unwrap();
-                data_write.swap($i, $i+1);
+                data_write.swap($i, $i + 1);
             }
             $swapped = true;
             thread::sleep($sleep_time);
@@ -61,13 +74,13 @@ macro_rules! bubble {
 
 pub fn bubble_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     let len = data_arc.read().unwrap().len();
-    let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
+    let sleep_time = BUBBLE_SLEEP / len.pow(2) as u32;
     let mut swapped = true;
 
     while swapped && !data_arc.read().unwrap().sorted {
         swapped = false;
 
-        for i in 0..len-1 {
+        for i in 0..len - 1 {
             check_for_stop!(data_arc);
             bubble!(data_arc, swapped, i, sleep_time);
         }
@@ -76,20 +89,20 @@ pub fn bubble_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
 
 pub fn cocktail_shaker_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     let len = data_arc.read().unwrap().len();
-    let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
-    let mut swapped = true;    // if an element was swapped
+    let sleep_time = BUBBLE_SLEEP / len.pow(2) as u32;
+    let mut swapped = true; // if an element was swapped
 
     while swapped && !data_arc.read().unwrap().sorted {
         swapped = false;
 
-        for i in 0..len-1 {
+        for i in 0..len - 1 {
             check_for_stop!(data_arc);
             bubble!(data_arc, swapped, i, sleep_time);
         }
 
         if swapped {
             swapped = false;
-            for i in (1..len-1).rev() {
+            for i in (1..len - 1).rev() {
                 check_for_stop!(data_arc);
                 bubble!(data_arc, swapped, i, sleep_time);
             }
@@ -97,17 +110,29 @@ pub fn cocktail_shaker_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     }
 }
 
-pub fn quick_sort(data_arc: Arc<RwLock<DataArrWrapper>>, low: usize, high: usize, data_len: u32) {
+pub fn quick_sort_lomuto(
+    data_arc: Arc<RwLock<DataArrWrapper>>,
+    l: usize,
+    r: usize,
+    data_len: u32,
+) {
     // Lomuto partition scheme: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
     // Pretty much copied the pseudocode
-    fn partition(data_arc: Arc<RwLock<DataArrWrapper>>, low: usize, high: usize, data_len: u32) -> usize {
-        let pivot = data_arc.read().unwrap()[high];
-        data_arc.write().unwrap().pivot = Some(high);
+    #[inline]
+    fn partition(
+        data_arc: Arc<RwLock<DataArrWrapper>>,
+        l: usize,
+        r: usize,
+        data_len: u32,
+    ) -> usize {
+        let pivot = data_arc.read().unwrap()[r];
+        data_arc.write().unwrap().pivot = Some(r);
 
-        let mut i = low;
-        for j in low..high {
-            check_for_stop!(data_arc);
-            {   // Update active info
+        let mut i = l;
+        for j in l..r {
+            check_for_stop_break!(data_arc);
+            {
+                // Update active info
                 let mut write = data_arc.write().unwrap();
                 write.active = Some(i);
                 write.active_2 = Some(j);
@@ -116,57 +141,57 @@ pub fn quick_sort(data_arc: Arc<RwLock<DataArrWrapper>>, low: usize, high: usize
             if data_arc.read().unwrap()[j] < pivot {
                 data_arc.write().unwrap().swap(i, j);
                 i += 1;
-                thread::sleep(QUICK_SLEEP/data_len);
+                thread::sleep(QUICK_SLEEP / data_len);
             }
         }
 
-        data_arc.write().unwrap().swap(i, high);
+        data_arc.write().unwrap().swap(i, r);
         i
     }
 
-    if low < high {  // Not equal
-        let p = partition(data_arc.clone(), low, high, data_len);
+    if l < r {
+        // Not equal
+        let p = partition(data_arc.clone(), l, r, data_len);
         if p > 0 {
-            quick_sort(data_arc.clone(), low, p - 1, data_len);
+            quick_sort_lomuto(data_arc.clone(), l, p - 1, data_len);
         }
-        if p < high {
-            quick_sort(data_arc.clone(), p + 1, high, data_len);
-        }   
+        if p < r {
+            quick_sort_lomuto(data_arc.clone(), p + 1, r, data_len);
+        }
     }
 }
 
 pub fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     let len = data_arc.read().unwrap().len();
-    let sleep_time = BUBBLE_SLEEP/len.pow(2) as u32;
-    
+    let sleep_time = BUBBLE_SLEEP / len.pow(2) as u32;
+
     for i in 1..len {
         check_for_stop!(data_arc);
         data_arc.write().unwrap().pivot = Some(i);
 
-        for j in (1..i+1).rev() {
+        for j in (1..i + 1).rev() {
             data_arc.write().unwrap().active = Some(j);
             {
                 let read = data_arc.read().unwrap();
-                if read.sorted ||  read[j-1] < read[j] {
-                    break
+                if read.sorted || read[j - 1] < read[j] {
+                    break;
                 }
             }
-            data_arc.write().unwrap().swap(j, j-1);
+            data_arc.write().unwrap().swap(j, j - 1);
             thread::sleep(sleep_time);
         }
     }
 }
 
 pub fn shell_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
-    pub struct ShellSortGapsIter {      // Iterator to generate gaps
+    pub struct ShellSortGapsIter {
+        // Iterator to generate gaps
         count: usize,
     }
 
     impl Default for ShellSortGapsIter {
         fn default() -> ShellSortGapsIter {
-            ShellSortGapsIter {
-                count: 1,
-            }
+            ShellSortGapsIter { count: 1 }
         }
     }
 
@@ -183,9 +208,11 @@ pub fn shell_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     }
 
     let len = data_arc.read().unwrap().len();
-    let sleep_time = SHELL_SLEEP/len.pow(2) as u32;
+    let sleep_time = SHELL_SLEEP / len.pow(2) as u32;
 
-    let gaps: Vec<usize> = ShellSortGapsIter::default().take_while(|i| *i < len).collect();
+    let gaps: Vec<usize> = ShellSortGapsIter::default()
+        .take_while(|i| *i < len)
+        .collect();
 
     for gap in gaps.into_iter().rev() {
         check_for_stop!(data_arc);
@@ -195,20 +222,20 @@ pub fn shell_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
 
 pub fn comb_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     let len = data_arc.read().unwrap().len();
-    let mut comb_len = len/2;
+    let mut comb_len = len / 2;
 
-    let sleep_time = SHELL_SLEEP/len.pow(2) as u32;
+    let sleep_time = SHELL_SLEEP / len.pow(2) as u32;
 
     while comb_len >= 1 {
         check_for_stop!(data_arc);
         comb!(data_arc, comb_len, len, sleep_time);
         comb_len /= 2;
-    }    
+    }
 }
 
 pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
-    use std::collections::HashMap;
     use radix::RadixNum;
+    use std::collections::HashMap;
 
     #[inline]
     fn get_max_digits(array: &[usize], base: usize) -> usize {
@@ -230,7 +257,7 @@ pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
 
     #[inline]
     fn get_digit_at(num: usize, i: usize, base: usize) -> usize {
-        (num/base.pow(i as u32)) % base
+        (num / base.pow(i as u32)) % base
     }
 
     let (largest_digits, array_len) = {
@@ -247,9 +274,10 @@ pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
 
             for num in data_read.iter() {
                 let digit = get_digit_at(*num, digit_num, base);
-                let bucket = buckets.entry(digit)
+                let bucket = buckets
+                    .entry(digit)
                     .or_insert(Vec::with_capacity(array_len));
-                
+
                 bucket.push(*num);
             }
         }
@@ -263,14 +291,65 @@ pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
                         write.active = Some(i);
                         write[i] = *element;
                         if write.sorted {
-                            return
+                            return;
                         }
                     }
-                    
+
                     i += 1;
-                    thread::sleep(RADIX_SLEEP/array_len as u32);
+                    thread::sleep(RADIX_SLEEP / array_len as u32);
                 }
             }
         }
+    }
+}
+
+pub fn merge_sort(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usize, data_len: u32) {
+    let len = data_arc.read().unwrap().len();
+
+    fn merge(data_arc: Arc<RwLock<DataArrWrapper>>, mut start: usize, mut mid: usize, end: usize, data_len: u32) {      // NOTE: "left" and "right" are index of start of l+r, only do this when array len > 1, and both arrays are sorted
+        let mut start2 = mid + 1;
+
+        if {
+            let read = data_arc.read().unwrap();
+            read[mid] <= read[start2]
+        } {
+            return;
+        }
+
+        while start <= mid && start2 <= end {
+            check_for_stop!(data_arc);
+            if {
+                let read = data_arc.read().unwrap();
+                read[start] <= read[start2]
+            } { start += 1; } else {    // if element 1 is not in the right place, sort it
+                let value = data_arc.read().unwrap()[start2];
+                let mut index = start2;
+
+                {   // Shift all elements between element 1 and element 2 right by 1 to insert this element.
+                    let mut write = data_arc.write().unwrap();
+                    while index != start {
+                        write[index] = write[index - 1];
+                        index -= 1;
+                    }
+                    write[start] = value;
+                }
+                start += 1;
+                mid += 1;
+                start2 += 1;
+
+                thread::sleep(QUICK_SLEEP/data_len);
+            }
+        }
+    }
+
+    if l < r {
+        check_for_stop!(data_arc);
+
+        let m = (l + r)/2;
+
+        merge_sort(data_arc.clone(), l, m, data_len);
+        merge_sort(data_arc.clone(), m + 1, r, data_len);
+
+        merge(data_arc, l, m, r, data_len);
     }
 }

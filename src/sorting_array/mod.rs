@@ -1,5 +1,5 @@
-mod commands;
 mod array;
+mod commands;
 mod sorts;
-pub use commands::*;
 pub use array::*;
+pub use commands::*;

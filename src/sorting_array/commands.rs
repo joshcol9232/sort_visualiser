@@ -13,18 +13,19 @@ pub enum SortInstruction {
     ShellSort,
     CombSort,
     RadixSort(usize),
+    MergeSort,
 }
 
 #[derive(Copy, Clone)]
 pub enum QuickSortType {
-    LomutoPartitioning,
+    Lomuto,
 }
 
 #[derive(Clone, Copy)]
 pub enum DisplayMode {
     Bars,
     Circle,
-    Line,
+    // Line,    // Not currently working due to nannou
     Dots,
     Pixels,
 }

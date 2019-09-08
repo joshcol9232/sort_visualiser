@@ -1,24 +1,23 @@
-#[macro_use] extern crate shrinkwraprs;
+#[macro_use]
+extern crate shrinkwraprs;
 
-mod tools;
 mod sorting_array;
+mod tools;
 
-use nannou::prelude::*;
 use nannou::draw::Draw;
+use nannou::prelude::*;
 
-use crate::sorting_array::{SortArray, SortInstruction, QuickSortType, DisplayMode};
+use crate::sorting_array::{DisplayMode, QuickSortType, SortArray, SortInstruction};
 
 use std::f32::consts::PI;
 
 pub const TWO_PI: f32 = 2.0 * PI;
 pub const DEFAULT_DATA_LEN: usize = 200;
-const MULTI_ARRAY_LEN: usize = 200;
-const RADIX_SORT_BASE: usize = 10;  // Supports radix between (inclusive) 2 to 36.
+const MULTI_ARRAY_LEN: usize = 100;
+const RADIX_SORT_BASE: usize = 10; // Supports radix between (inclusive) 2 to 36.
 
 fn main() {
-    nannou::app(model)
-        .update(update)
-        .run();
+    nannou::app(model).update(update).run();
 }
 
 #[derive(Default)]
@@ -39,7 +38,15 @@ impl Model {
 
     fn display(&self, draw: &Draw, transform: (f32, f32)) {
         for (i, arr) in self.arrays.iter().enumerate() {
-            arr.display(draw, i, self.arrays.len(), arr.len(), self.current_display_mode, self.window_dims, transform);
+            arr.display(
+                draw,
+                i,
+                self.arrays.len(),
+                arr.len(),
+                self.current_display_mode,
+                self.window_dims,
+                transform,
+            );
         }
     }
 
@@ -58,17 +65,13 @@ impl Model {
 }
 
 fn model(app: &App) -> Model {
-    app.new_window()
-        .event(event)
-        .view(view)
-        .build()
-        .unwrap();
+    app.new_window().event(event).view(view).build().unwrap();
 
     let model = Model {
         arrays: vec![SortArray::new(DEFAULT_DATA_LEN)],
         current_display_mode: DisplayMode::Circle,
         window_dims: (0.0, 0.0),
-        array_len: DEFAULT_DATA_LEN
+        array_len: DEFAULT_DATA_LEN,
     };
 
     model
@@ -92,39 +95,38 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                     if model.arrays.len() > 1 {
                         model.set_to_single_array();
                     }
-                    
+
                     match key {
                         Key::C => model.current_display_mode = DisplayMode::Circle,
                         Key::B => model.current_display_mode = DisplayMode::Bars,
                         Key::D => model.current_display_mode = DisplayMode::Dots,
                         // Key::L => model.current_display_mode = DisplayMode::Line,
-                        _ => ()
+                        _ => (),
                     }
-                },
-                Key::P => {     // Pixel display mode (multi-array)
+                }
+                Key::P => {
+                    // Pixel display mode (multi-array)
                     model.array_len = MULTI_ARRAY_LEN;
                     // Make it so that each pixel is square.
-                    let pixel_size = model.window_dims.0/model.array_len as f32;
-                    let array_num = (model.window_dims.1/pixel_size).floor() as usize;
+                    let pixel_size = model.window_dims.0 / model.array_len as f32;
+                    let array_num = (model.window_dims.1 / pixel_size).floor() as usize;
 
                     model.set_to_multi_array(array_num);
                     model.current_display_mode = DisplayMode::Pixels;
-                },
+                }
                 Key::Q => model.instruction(SortInstruction::Stop),
 
                 Key::Key1 => model.instruction(SortInstruction::BubbleSort),
                 Key::Key2 => model.instruction(SortInstruction::InsertionSort),
                 Key::Key3 => model.instruction(SortInstruction::CocktailShakerSort),
                 Key::Key4 => model.instruction(
-                    SortInstruction::QuickSort(QuickSortType::LomutoPartitioning)
+                    SortInstruction::QuickSort(QuickSortType::Lomuto)
                 ),
-                // Key::Key4 => model.instruction(
-                //     SortInstruction::QuickSort(QuickSortType::Overwriting)
-                // ),
-                Key::Key5 => model.instruction(SortInstruction::ShellSort),
-                Key::Key6 => model.instruction(SortInstruction::CombSort),
-                Key::Key7 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
-                _ => ()
+                Key::Key5 => model.instruction(SortInstruction::MergeSort),
+                Key::Key6 => model.instruction(SortInstruction::ShellSort),
+                Key::Key7 => model.instruction(SortInstruction::CombSort),
+                Key::Key8 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
+                _ => (),
             }
         }
         KeyReleased(_key) => {}
@@ -154,7 +156,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
 }
 
 fn view(app: &App, model: &Model, frame: &Frame) {
-    let transformation = (-model.window_dims.0/2.0, -model.window_dims.1/2.0);      // Axis starts bottom left corner
+    let transformation = (-model.window_dims.0 / 2.0, -model.window_dims.1 / 2.0); // Axis starts bottom left corner
 
     let draw = app.draw();
     draw.background().color(BLACK);

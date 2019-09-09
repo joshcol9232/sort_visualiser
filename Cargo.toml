@@ -10,6 +10,7 @@ shaderc = "0.5"
 shrinkwraprs = "0.2.1"
 radix = "0.5"
 rayon = "1.2"
+ears = "0.7"
 
 [features]
 shaderc_fix = ["shaderc/build-from-source"]

@@ -53,13 +53,13 @@ impl Model {
     fn set_to_single_array(&mut self) {
         self.arrays.clear();
         self.array_len = DEFAULT_DATA_LEN;
-        self.arrays.push(SortArray::new(self.array_len));
+        self.arrays.push(SortArray::new(self.array_len, false));
     }
 
     fn set_to_multi_array(&mut self, len: usize) {
         self.arrays.clear();
         for _ in 0..len {
-            self.arrays.push(SortArray::new(self.array_len));
+            self.arrays.push(SortArray::new(self.array_len, true));
         }
     }
 }
@@ -68,7 +68,7 @@ fn model(app: &App) -> Model {
     app.new_window().event(event).view(view).build().unwrap();
 
     let model = Model {
-        arrays: vec![SortArray::new(DEFAULT_DATA_LEN)],
+        arrays: vec![SortArray::new(DEFAULT_DATA_LEN, false)],
         current_display_mode: DisplayMode::Circle,
         window_dims: (0.0, 0.0),
         array_len: DEFAULT_DATA_LEN,

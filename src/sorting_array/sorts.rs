@@ -40,8 +40,8 @@ macro_rules! comb {
             while j >= $gap && $data_arc.read().unwrap()[j - $gap] > temp {
                 {
                     let mut write = $data_arc.write().unwrap();
-                    write.active = Some(j - $gap);
-                    write.active_2 = Some(j);
+                    write.set_active(j - $gap);
+                    write.set_active_2(j);
                     write[j] = write[j - $gap];
                 }
 
@@ -56,7 +56,7 @@ macro_rules! comb {
 // Shared by bubble sort and cocktail shaker sort.
 macro_rules! bubble {
     ($data_arc:expr, $swapped:expr, $i:expr, $sleep_time:expr) => {
-        $data_arc.write().unwrap().active = Some($i + 1);
+        $data_arc.write().unwrap().set_active($i + 1);
 
         let (d1, d2) = {
             let read = $data_arc.read().unwrap();
@@ -122,7 +122,7 @@ pub fn quick_sort_lomuto(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usi
         data_len: u32,
     ) -> usize {
         let pivot = data_arc.read().unwrap()[r];
-        data_arc.write().unwrap().pivot = Some(r);
+        data_arc.write().unwrap().set_pivot(r);
 
         let mut i = l;
         for j in l..r {
@@ -130,8 +130,8 @@ pub fn quick_sort_lomuto(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usi
             {
                 // Update active info
                 let mut write = data_arc.write().unwrap();
-                write.active = Some(i);
-                write.active_2 = Some(j);
+                write.set_active(i);
+                write.set_active_2(j);
             }
 
             if data_arc.read().unwrap()[j] < pivot {
@@ -163,10 +163,10 @@ pub fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
 
     for i in 1..len {
         check_for_stop!(data_arc);
-        data_arc.write().unwrap().pivot = Some(i);
+        data_arc.write().unwrap().set_pivot(i);
 
         for j in (1..i + 1).rev() {
-            data_arc.write().unwrap().active = Some(j);
+            data_arc.write().unwrap().set_active(j);
             {
                 let read = data_arc.read().unwrap();
                 if read.sorted || read[j - 1] < read[j] {
@@ -183,15 +183,17 @@ pub fn selection_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     let len = data_arc.read().unwrap().len();
 
     for done in 0..len-1 {
-        data_arc.write().unwrap().active_2 = Some(done);
+        check_for_stop!(data_arc);
+        data_arc.write().unwrap().set_active_2(done);
 
         let mut min = (done, data_arc.read().unwrap()[done]); // (index, value) of minumum value in current part of list
         for i in done+1..len {
-            data_arc.write().unwrap().active = Some(i);
+            check_for_stop!(data_arc);
+            data_arc.write().unwrap().set_active(i);
             let val = data_arc.read().unwrap()[i];
             if val < min.1 {    // If value less than curent minimum
                 min = (i, val);
-                data_arc.write().unwrap().pivot = Some(i);
+                data_arc.write().unwrap().set_pivot(i);
             }
             thread::sleep(SELECTION_SLEEP/len as u32);
         }
@@ -306,7 +308,7 @@ pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
                 for element in bucket.iter() {
                     {
                         let mut write = data_arc.write().unwrap();
-                        write.active = Some(i);
+                        write.set_active(i);
                         write[i] = *element;
                         if write.sorted {
                             return;
@@ -355,10 +357,10 @@ pub fn merge_sort(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usize, dat
                 {
                     // Shift all elements between element 1 and element 2 right by 1 to insert this element.
                     let mut write = data_arc.write().unwrap();
-                    write.pivot = Some(start2);
+                    write.set_pivot(start2);
 
                     while index != start {
-                        write.active = Some(index);
+                        write.set_active(index);
                         write[index] = write[index - 1];
                         index -= 1;
                     }

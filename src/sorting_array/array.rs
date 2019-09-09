@@ -1,13 +1,17 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, mpsc, Mutex};
 use std::thread;
 use std::time::Duration;
 
 use nannou::{draw::Draw, geom::point::Point2};
+use ears::{Sound, AudioController};
 
 use super::{commands::*, sorts};
 use crate::{tools, TWO_PI};
 
 const SWAP_SLEEP: Duration = Duration::from_millis(1);
+
+const ACTIVE_SOUND_LOCATION: &str = "./resources/clack.ogg";
+const PITCH_DIFF_MULTIPLIER: f32 = 2.0;
 
 macro_rules! start_sort_thread {
     // Starts a sorting thread (common pattern)
@@ -44,35 +48,105 @@ pub struct DataArrWrapper {
     pub active_2: Option<usize>,
     pub pivot: Option<usize>,
     pub sorted: bool,
+    pub max_val: usize,
+    sound_job_sender: Option<Arc<Mutex<mpsc::Sender<SoundJob>>>>,
 }
 
 impl DataArrWrapper {
-    pub fn new(arr: Vec<usize>) -> Self {
+    pub fn new(arr: Vec<usize>, max_val: usize, sound_job_sender: Option<Arc<Mutex<mpsc::Sender<SoundJob>>>>) -> Self {
         Self {
             arr,
             active: None,
             active_2: None,
             pivot: None,
             sorted: true,
+            max_val,
+            sound_job_sender,
         }
     }
+
+    #[inline]
+    pub fn set_active(&mut self, index: usize) {
+        self.active = Some(index);
+        // Play sound
+        let pitch = (self.arr[index] as f32/self.max_val as f32) * PITCH_DIFF_MULTIPLIER + 0.5;
+        if self.sound_job_sender.is_some() {
+            self.sound_job_sender.as_mut()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .send(SoundJob::Play(pitch))
+                .unwrap();
+        }
+    }
+
+    #[inline]
+    pub fn set_active_2(&mut self, index: usize) {
+        self.active_2 = Some(index);
+    }
+
+    #[inline]
+    pub fn set_pivot(&mut self, index: usize) {
+        self.pivot = Some(index);
+    }
+}
+
+pub enum SoundJob {
+    Play(f32),  // Play(pitch)
 }
 
 pub struct SortArray {
     pub data: Arc<RwLock<DataArrWrapper>>,
-    pub max_val: usize,
     sort_thread: Option<thread::JoinHandle<()>>,
 }
 
 impl SortArray {
-    pub fn new(num_of_lines: usize) -> SortArray {
+    pub fn new(num_of_lines: usize, part_of_multi: bool) -> SortArray {
+        let sound_job_sender = if !part_of_multi {
+            Some(Arc::new(Mutex::new(Self::start_sound_thread())))
+        } else {
+            None
+        };
+
         SortArray {
             data: Arc::new(RwLock::new(
-                DataArrWrapper::new((0..num_of_lines).collect()), // Make an array of incrementing numbers up to the length of the array.
+                DataArrWrapper::new(
+                    (0..num_of_lines).collect(), // Make an array of incrementing numbers up to the length of the array.
+                    num_of_lines,
+                    sound_job_sender,
+                ),
             )), // Then when drawing you can scale it however you want.
-            max_val: num_of_lines,
             sort_thread: None,
         }
+    }
+
+    fn start_sound_thread() -> mpsc::Sender<SoundJob> {
+        let (sound_job_sender, sound_job_receiver): (mpsc::Sender<SoundJob>, mpsc::Receiver<SoundJob>) = mpsc::channel();
+        let sound_job_receiver = Arc::new(Mutex::new(sound_job_receiver));
+
+        thread::spawn(move || {
+            let mut sound = Sound::new(ACTIVE_SOUND_LOCATION).unwrap();
+
+            loop {
+                match sound_job_receiver.lock().unwrap().recv() {
+                    Ok(job) => {
+                        match job {
+                            SoundJob::Play(pitch) => {
+                                sound.set_pitch(pitch);
+                                if sound.is_playing() {
+                                    sound.stop();
+                                }
+                                sound.play();
+                            }
+                            //SoundJob::Stop => sound.stop(),
+                        }
+                    }
+                    Err(_) => break,
+                }
+            }
+        });
+
+        sound_job_sender
     }
 
     // Easier to handle in here rather than in main
@@ -145,7 +219,8 @@ impl SortArray {
                 self.data.write().unwrap().reverse();
             }
             SortInstruction::Stop => {
-                self.data.write().unwrap().sorted = true;
+                let mut write = self.data.write().unwrap();
+                write.sorted = true;
             }
         }
     }
@@ -167,7 +242,7 @@ impl SortArray {
             DisplayMode::Bars => {
                 let scale = (
                     window_dims.0 / array_len as f32,
-                    window_dims.1 / self.max_val as f32,
+                    window_dims.1 / data_read.max_val as f32,
                 );
 
                 for (i, d) in data_read.iter().enumerate() {
@@ -179,7 +254,7 @@ impl SortArray {
                         .end(Point2::new(x, (*d as f32 + 1.0) * scale.1))
                         .thickness(scale.0);
 
-                    colour_element_red_grn_clrs!(data_read, i, drawing, self.max_val, d);
+                    colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);
                 }
             }
             DisplayMode::Circle => {
@@ -201,7 +276,7 @@ impl SortArray {
                             tools::get_point_on_radius(radius, angle),
                             tools::get_point_on_radius(radius, connecting_angle),
                         )
-                        .hsv(*d as f32 / self.max_val as f32, 1.0, 1.0);
+                        .hsv(*d as f32 / data_read.max_val as f32, 1.0, 1.0);
 
                     angle = connecting_angle;
                 }
@@ -231,7 +306,7 @@ impl SortArray {
             DisplayMode::Dots => {
                 let scale = (
                     window_dims.0 / array_len as f32,
-                    window_dims.1 / self.max_val as f32,
+                    window_dims.1 / data_read.max_val as f32,
                 );
 
                 for (i, d) in data_read.iter().enumerate() {
@@ -243,12 +318,12 @@ impl SortArray {
                         )
                         .radius(scale.0 / 2.0);
 
-                    colour_element_red_grn_clrs!(data_read, i, drawing, self.max_val, d);
+                    colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);
                 }
             }
             DisplayMode::Pixels => {
                 let scale = (
-                    window_dims.0 / self.max_val as f32,
+                    window_dims.0 / data_read.max_val as f32,
                     window_dims.1 / max_index as f32,
                 );
                 let y = (index as f32 + 0.5) * scale.1;
@@ -257,7 +332,7 @@ impl SortArray {
                     draw.rect()
                         .x_y(transform.0 + (i as f32 + 0.5) * scale.0, transform.1 + y)
                         .w_h(scale.0, scale.1)
-                        .hsv((1.0 - (*d as f32 / self.max_val as f32)) / 3.0, 1.0, 1.0);
+                        .hsv((1.0 - (*d as f32 / data_read.max_val as f32)) / 3.0, 1.0, 1.0);
                 }
             }
         }
@@ -292,7 +367,7 @@ impl SortArray {
                 {
                     let mut data_write = data.write().unwrap();
                     data_write.swap(i, nannou::rand::random_range(0usize, len));
-                    data_write.active = Some(i);
+                    data_write.set_active(i);
                 }
                 thread::sleep(SWAP_SLEEP / len as u32);
             }

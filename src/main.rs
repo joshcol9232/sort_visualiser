@@ -117,15 +117,14 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::Q => model.instruction(SortInstruction::Stop),
 
                 Key::Key1 => model.instruction(SortInstruction::BubbleSort),
-                Key::Key2 => model.instruction(SortInstruction::InsertionSort),
-                Key::Key3 => model.instruction(SortInstruction::CocktailShakerSort),
-                Key::Key4 => model.instruction(
-                    SortInstruction::QuickSort(QuickSortType::Lomuto)
-                ),
-                Key::Key5 => model.instruction(SortInstruction::MergeSort),
-                Key::Key6 => model.instruction(SortInstruction::ShellSort),
-                Key::Key7 => model.instruction(SortInstruction::CombSort),
-                Key::Key8 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
+                Key::Key2 => model.instruction(SortInstruction::CocktailShakerSort),
+                Key::Key3 => model.instruction(SortInstruction::InsertionSort),
+                Key::Key4 => model.instruction(SortInstruction::SelectionSort),
+                Key::Key5 => model.instruction(SortInstruction::ShellSort),
+                Key::Key6 => model.instruction(SortInstruction::CombSort),
+                Key::Key7 => model.instruction(SortInstruction::QuickSort(QuickSortType::Lomuto)),
+                Key::Key8 => model.instruction(SortInstruction::MergeSort),
+                Key::Key9 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
                 _ => (),
             }
         }

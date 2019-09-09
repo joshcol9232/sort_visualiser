@@ -8,12 +8,16 @@ pub enum SortInstruction {
 
     BubbleSort,
     CocktailShakerSort,
-    QuickSort(QuickSortType),
     InsertionSort,
+    SelectionSort,
+
     ShellSort,
     CombSort,
-    RadixSort(usize),
+
+    QuickSort(QuickSortType),
     MergeSort,
+    
+    RadixSort(usize),
 }
 
 #[derive(Copy, Clone)]

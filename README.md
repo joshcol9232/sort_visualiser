@@ -53,13 +53,14 @@ Does not display active elements etc because it would be a bit too cluttered.
 **Key** | **Sort**
 --- | ---
 **1** | Bubble Sort.
-**2** | Insertion Sort.
-**3** | Cocktail Shaker Sort.
-**4** | Quicksort (Lomuto partitioning).
-**5** | Merge Sort.
-**6** | Shell Sort.
-**7** | Comb Sort (very similar to shell sort).
-**8** | Radix LSD Sort (Base 10).
+**2** | Cocktail Shaker Sort.
+**3** | Insertion Sort.
+**4** | Selection Sort.
+**5** | Shell Sort.
+**6** | Comb Sort (very similar to shell sort).
+**7** | Quicksort (Lomuto partitioning).
+**8** | Merge Sort.
+**9** | Radix LSD Sort (Base 10).
 
 You can do multiple sorts at once but be careful since this can ruin the array (however you can reset by pressing **R**).
 

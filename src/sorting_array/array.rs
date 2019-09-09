@@ -105,6 +105,11 @@ impl SortArray {
                     sorts::insertion_sort(data_arc_cln.clone());
                 });
             }
+            SortInstruction::SelectionSort => {
+                start_sort_thread!(self, data_arc_cln, {
+                    sorts::selection_sort(data_arc_cln.clone());
+                });
+            }
             SortInstruction::CocktailShakerSort => {
                 start_sort_thread!(self, data_arc_cln, {
                     sorts::cocktail_shaker_sort(data_arc_cln.clone());
@@ -202,26 +207,26 @@ impl SortArray {
                 }
             }
             // DisplayMode::Line => {
-                // use nannou::geom::vertex;
-                // use nannou::color::{Rgba, Hsv};
-                // // Polyline is broken in nannou atm, so waiting for change to lyon which they are implementing.
-                //  //   see: https://github.com/nannou-org/nannou/issues/185
+            // use nannou::geom::vertex;
+            // use nannou::color::{Rgba, Hsv};
+            // // Polyline is broken in nannou atm, so waiting for change to lyon which they are implementing.
+            //  //   see: https://github.com/nannou-org/nannou/issues/185
 
-                // let mut points: Vec<vertex::Srgba> = Vec::with_capacity(self.max_val);
-                // let scale = (window_dims.0/data_read.len() as f32, window_dims.1/self.max_val as f32);
+            // let mut points: Vec<vertex::Srgba> = Vec::with_capacity(self.max_val);
+            // let scale = (window_dims.0/data_read.len() as f32, window_dims.1/self.max_val as f32);
 
-                // for (i, d) in data_read.iter().enumerate() {
-                //     let col = Rgba::from(Hsv::new(*d as f32/self.max_val as f32, 1.0, 1.0));
-                //     points.push(
-                //         vertex::Srgba(
-                //             [(i as f32 * scale.0) + scale.0/2.0 + transform.0, (*d as f32 + 1.0) * scale.1 + transform.1].into(),
-                //             col.into()
-                //         )
-                //     );
-                // }
+            // for (i, d) in data_read.iter().enumerate() {
+            //     let col = Rgba::from(Hsv::new(*d as f32/self.max_val as f32, 1.0, 1.0));
+            //     points.push(
+            //         vertex::Srgba(
+            //             [(i as f32 * scale.0) + scale.0/2.0 + transform.0, (*d as f32 + 1.0) * scale.1 + transform.1].into(),
+            //             col.into()
+            //         )
+            //     );
+            // }
 
-                // draw.polyline()
-                //     .vertices(1.0, points);
+            // draw.polyline()
+            //     .vertices(1.0, points);
             // }
             DisplayMode::Dots => {
                 let scale = (

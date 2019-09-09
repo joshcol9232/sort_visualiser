@@ -6,6 +6,7 @@ use std::time::Duration;
 
 // NOTE: Sorts of the same/simmilar time complexity will use the same sleep time.
 const BUBBLE_SLEEP: Duration = Duration::from_secs(80); // For 1 element/len squared
+const SELECTION_SLEEP: Duration = Duration::from_millis(500);   // Takes so long to scan array so it looks like it isn't doing anything, so needs to be short
 const SHELL_SLEEP: Duration = Duration::from_secs(400);
 const QUICK_SLEEP: Duration = Duration::from_secs(6);
 const RADIX_SLEEP: Duration = Duration::from_secs(2);
@@ -110,12 +111,7 @@ pub fn cocktail_shaker_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
     }
 }
 
-pub fn quick_sort_lomuto(
-    data_arc: Arc<RwLock<DataArrWrapper>>,
-    l: usize,
-    r: usize,
-    data_len: u32,
-) {
+pub fn quick_sort_lomuto(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usize, data_len: u32) {
     // Lomuto partition scheme: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
     // Pretty much copied the pseudocode
     #[inline]
@@ -180,6 +176,28 @@ pub fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
             data_arc.write().unwrap().swap(j, j - 1);
             thread::sleep(sleep_time);
         }
+    }
+}
+
+pub fn selection_sort(data_arc: Arc<RwLock<DataArrWrapper>>) {
+    let len = data_arc.read().unwrap().len();
+
+    for done in 0..len-1 {
+        data_arc.write().unwrap().active_2 = Some(done);
+
+        let mut min = (done, data_arc.read().unwrap()[done]); // (index, value) of minumum value in current part of list
+        for i in done+1..len {
+            data_arc.write().unwrap().active = Some(i);
+            let val = data_arc.read().unwrap()[i];
+            if val < min.1 {    // If value less than curent minimum
+                min = (i, val);
+                data_arc.write().unwrap().pivot = Some(i);
+            }
+            thread::sleep(SELECTION_SLEEP/len as u32);
+        }
+
+        // Swap minumum with element at done
+        data_arc.write().unwrap().swap(min.0, done);
     }
 }
 
@@ -304,9 +322,14 @@ pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, base: usize) {
 }
 
 pub fn merge_sort(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usize, data_len: u32) {
-    let len = data_arc.read().unwrap().len();
-
-    fn merge(data_arc: Arc<RwLock<DataArrWrapper>>, mut start: usize, mut mid: usize, end: usize, data_len: u32) {      // NOTE: "left" and "right" are index of start of l+r, only do this when array len > 1, and both arrays are sorted
+    // Works kind of like pushing the left array into the right array.
+    fn merge(
+        data_arc: Arc<RwLock<DataArrWrapper>>,
+        mut start: usize,
+        mut mid: usize,
+        end: usize,
+        data_len: u32,
+    ) {
         let mut start2 = mid + 1;
 
         if {
@@ -318,16 +341,24 @@ pub fn merge_sort(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usize, dat
 
         while start <= mid && start2 <= end {
             check_for_stop!(data_arc);
+
             if {
                 let read = data_arc.read().unwrap();
                 read[start] <= read[start2]
-            } { start += 1; } else {    // if element 1 is not in the right place, sort it
-                let value = data_arc.read().unwrap()[start2];
+            } {
+                start += 1;
+            } else {
+                // if element 1 is not in the right place, move it until it is.
+                let value = data_arc.read().unwrap()[start2]; // Element 2
                 let mut index = start2;
 
-                {   // Shift all elements between element 1 and element 2 right by 1 to insert this element.
+                {
+                    // Shift all elements between element 1 and element 2 right by 1 to insert this element.
                     let mut write = data_arc.write().unwrap();
+                    write.pivot = Some(start2);
+
                     while index != start {
+                        write.active = Some(index);
                         write[index] = write[index - 1];
                         index -= 1;
                     }
@@ -337,7 +368,7 @@ pub fn merge_sort(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usize, dat
                 mid += 1;
                 start2 += 1;
 
-                thread::sleep(QUICK_SLEEP/data_len);
+                thread::sleep(QUICK_SLEEP / data_len);
             }
         }
     }
@@ -345,7 +376,7 @@ pub fn merge_sort(data_arc: Arc<RwLock<DataArrWrapper>>, l: usize, r: usize, dat
     if l < r {
         check_for_stop!(data_arc);
 
-        let m = (l + r)/2;
+        let m = (l + r) / 2;
 
         merge_sort(data_arc.clone(), l, m, data_len);
         merge_sort(data_arc.clone(), m + 1, r, data_len);

@@ -11,7 +11,7 @@ minimum_pitch: 180.0                  # Default: 180.0.
 quicksort_partitioning: "lomuto"       # Default: "lomuto". Choices are: "lomuto"
 
 ## Radix sort:
-radix_lsd_base: 10                    # Default: 10. Range inclusive from (2, 36).
+radix_lsd_base: 2                    # Default: 10. Range inclusive from (2, 36).
 
 # --- SLEEP TIMES ---
 # These are applied by dividing the time by the time complexity [O(n)]
@@ -23,7 +23,7 @@ radix_lsd_base: 10                    # Default: 10. Range inclusive from (2, 36
 ## individual sorts in the section below this.
 ## To change each time below just change the number, not the whole line.
 _n_squared_slp: &n_squared 60000           # Default: 60000. For O(n^2)
-_n_pow_3_over_2: &n_pow_3_over_2 18000        # Default: 18000. For O[n^(3/2)]
+_n_pow_3_over_2: &n_pow_3_over_2 18000     # Default: 18000. For O[n^(3/2)]
 _n_log_n: &n_log_n 4000                    # Default: 4000. For O[n log n]
 _n_w: &n_w 1300                            # Default: 1300. For O[w * n], where w is the bits required to store each key (Radix Sorts).
 

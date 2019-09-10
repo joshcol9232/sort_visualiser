@@ -71,8 +71,6 @@ impl Model {
             conf["quicksort_partitioning"].as_str().expect("Could not parse quicksort_partitioning field in config as a string.")
         ).unwrap();
 
-        println!("Config file loaded.");
-
         // Load audio.
         let audio_host = nannou_audio::Host::new();
 

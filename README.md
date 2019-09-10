@@ -86,7 +86,8 @@ Resetting the array regenerates all of the elements in the array, so if you ever
 
 ### Configuration:
 
-Radix sort bases and sleep time for each sort can be changed, 
+All configuration is done through the `config.yaml` file in the root folder of the project.
+Sleep times for each sort can be changed, along with sound settings and array settings (such as the length of the arrays generated).
 
 ### Compiling and Running:
 

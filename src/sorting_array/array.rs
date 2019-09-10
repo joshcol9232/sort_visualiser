@@ -4,14 +4,10 @@ use std::time::Duration;
 
 use nannou::{draw::Draw, geom::point::Point2};
 use ears::{Sound, AudioController};
+use yaml_rust::Yaml;
 
 use super::{commands::*, sorts};
 use crate::{tools, TWO_PI};
-
-const SWAP_SLEEP: Duration = Duration::from_millis(1);
-
-const ACTIVE_SOUND_LOCATION: &str = "./resources/clack.ogg";
-const PITCH_DIFF_MULTIPLIER: f32 = 2.0;
 
 macro_rules! start_sort_thread {
     // Starts a sorting thread (common pattern)
@@ -50,10 +46,11 @@ pub struct DataArrWrapper {
     pub sorted: bool,
     pub max_val: usize,
     sound_job_sender: Option<Arc<Mutex<mpsc::Sender<SoundJob>>>>,
+    pitch_diff_multiplier: f32,
 }
 
 impl DataArrWrapper {
-    pub fn new(arr: Vec<usize>, max_val: usize, sound_job_sender: Option<Arc<Mutex<mpsc::Sender<SoundJob>>>>) -> Self {
+    pub fn new(arr: Vec<usize>, max_val: usize, sound_job_sender: Option<Arc<Mutex<mpsc::Sender<SoundJob>>>>, pitch_diff_multiplier: f32) -> Self {
         Self {
             arr,
             active: None,
@@ -62,6 +59,7 @@ impl DataArrWrapper {
             sorted: true,
             max_val,
             sound_job_sender,
+            pitch_diff_multiplier,
         }
     }
 
@@ -69,7 +67,7 @@ impl DataArrWrapper {
     pub fn set_active(&mut self, index: usize) {
         self.active = Some(index);
         // Play sound
-        let pitch = (self.arr[index] as f32/self.max_val as f32) * PITCH_DIFF_MULTIPLIER + 0.5;
+        let pitch = 0.1 + (self.arr[index] as f32/self.max_val as f32) * self.pitch_diff_multiplier;
         if self.sound_job_sender.is_some() {
             self.sound_job_sender.as_mut()
                 .unwrap()
@@ -97,13 +95,14 @@ pub enum SoundJob {
 
 pub struct SortArray {
     pub data: Arc<RwLock<DataArrWrapper>>,
+    sleep_times: Arc<SleepTimes>,
     sort_thread: Option<thread::JoinHandle<()>>,
 }
 
 impl SortArray {
-    pub fn new(num_of_lines: usize, part_of_multi: bool) -> SortArray {
+    pub fn new(num_of_lines: usize, part_of_multi: bool, sound_file: String, sleep_times: Arc<SleepTimes>, pitch_diff_multiplier: f32) -> SortArray {
         let sound_job_sender = if !part_of_multi {
-            Some(Arc::new(Mutex::new(Self::start_sound_thread())))
+            Some(Arc::new(Mutex::new(Self::start_sound_thread(sound_file))))
         } else {
             None
         };
@@ -114,18 +113,20 @@ impl SortArray {
                     (0..num_of_lines).collect(), // Make an array of incrementing numbers up to the length of the array.
                     num_of_lines,
                     sound_job_sender,
+                    pitch_diff_multiplier,
                 ),
             )), // Then when drawing you can scale it however you want.
+            sleep_times,
             sort_thread: None,
         }
     }
 
-    fn start_sound_thread() -> mpsc::Sender<SoundJob> {
+    fn start_sound_thread(sound_file: String) -> mpsc::Sender<SoundJob> {
         let (sound_job_sender, sound_job_receiver): (mpsc::Sender<SoundJob>, mpsc::Receiver<SoundJob>) = mpsc::channel();
         let sound_job_receiver = Arc::new(Mutex::new(sound_job_receiver));
 
         thread::spawn(move || {
-            let mut sound = Sound::new(ACTIVE_SOUND_LOCATION).unwrap();
+            let mut sound = Sound::new(&sound_file).unwrap();
 
             loop {
                 match sound_job_receiver.lock().unwrap().recv() {
@@ -133,9 +134,9 @@ impl SortArray {
                         match job {
                             SoundJob::Play(pitch) => {
                                 sound.set_pitch(pitch);
-                                if sound.is_playing() {
-                                    sound.stop();
-                                }
+                                //if sound.is_playing() {
+                                //    sound.stop();
+                                //}
                                 sound.play();
                             }
                             //SoundJob::Stop => sound.stop(),
@@ -152,62 +153,75 @@ impl SortArray {
     // Easier to handle in here rather than in main
     pub fn instruction(&mut self, instruction: SortInstruction) {
         let data_arc_cln = Arc::clone(&self.data);
+        let sleep_times_cln = Arc::clone(&self.sleep_times);
+        let data_len = data_arc_cln.read().unwrap().len();
+
         match instruction {
             SortInstruction::Shuffle(rounds) => {
                 start_sort_thread!(self, data_arc_cln, {
-                    Self::shuffle(data_arc_cln.clone(), rounds);
+                    let sleep_time = sleep_times_cln.shuffle/data_len.pow(2) as u32;
+                    Self::shuffle(data_arc_cln.clone(), &sleep_time, rounds);
                 });
             }
             SortInstruction::BubbleSort => {
                 start_sort_thread!(self, data_arc_cln, {
-                    sorts::bubble_sort(data_arc_cln.clone());
+                    let sleep_time = sleep_times_cln.bubble/data_len.pow(2) as u32;
+                    sorts::bubble_sort(data_arc_cln.clone(), &sleep_time);
                 });
             }
             SortInstruction::QuickSort(partition_type) => {
                 let len = self.data.read().unwrap().len();
 
                 start_sort_thread!(self, data_arc_cln, {
+                    let sleep_time = sleep_times_cln.quick/data_len as u32; //sleep_times_cln.quick/((data_len as f32).log10().floor() as u32 * data_len as u32);
                     match partition_type {
                         QuickSortType::Lomuto => {
-                            sorts::quick_sort_lomuto(data_arc_cln.clone(), 0, len - 1, len as u32)
+                            sorts::quick_sort_lomuto(data_arc_cln.clone(), &sleep_time, 0, len - 1)
                         }
                     }
                 });
             }
             SortInstruction::InsertionSort => {
                 start_sort_thread!(self, data_arc_cln, {
-                    sorts::insertion_sort(data_arc_cln.clone());
+                    let sleep_time = sleep_times_cln.insertion/(data_len).pow(2) as u32;
+                    sorts::insertion_sort(data_arc_cln.clone(), &sleep_time);
                 });
             }
             SortInstruction::SelectionSort => {
                 start_sort_thread!(self, data_arc_cln, {
-                    sorts::selection_sort(data_arc_cln.clone());
+                    let sleep_time = sleep_times_cln.selection/(data_len).pow(2) as u32;
+                    sorts::selection_sort(data_arc_cln.clone(), &sleep_time);
                 });
             }
             SortInstruction::CocktailShakerSort => {
                 start_sort_thread!(self, data_arc_cln, {
-                    sorts::cocktail_shaker_sort(data_arc_cln.clone());
+                    let sleep_time = sleep_times_cln.cocktail/(data_len).pow(2) as u32;
+                    sorts::cocktail_shaker_sort(data_arc_cln.clone(), &sleep_time);
                 });
             }
             SortInstruction::ShellSort => {
                 start_sort_thread!(self, data_arc_cln, {
-                    sorts::shell_sort(data_arc_cln.clone());
+                    let sleep_time = sleep_times_cln.shell/((data_len as f32).powf(3.0/2.0).floor() as u32);
+                    sorts::shell_sort(data_arc_cln.clone(), &sleep_time);
                 });
             }
             SortInstruction::CombSort => {
                 start_sort_thread!(self, data_arc_cln, {
-                    sorts::comb_sort(data_arc_cln.clone());
+                    let sleep_time = sleep_times_cln.comb/((data_len as f32).powf(3.0/2.0).floor() as u32);
+                    sorts::comb_sort(data_arc_cln.clone(), &sleep_time);
                 });
             }
             SortInstruction::RadixSort(base) => {
                 start_sort_thread!(self, data_arc_cln, {
-                    sorts::radix_lsd(data_arc_cln.clone(), base);
+                    let sleep_time = sleep_times_cln.radix/data_len as u32;
+                    sorts::radix_lsd(data_arc_cln.clone(), &sleep_time, base);
                 });
             }
             SortInstruction::MergeSort => {
                 let len = self.data.read().unwrap().len();
                 start_sort_thread!(self, data_arc_cln, {
-                    sorts::merge_sort(data_arc_cln.clone(), 0, len - 1, len as u32);
+                    let sleep_time = sleep_times_cln.merge/data_len as u32; //sleep_times_cln.merge/((data_len as f32).log10().floor() as u32 * data_len as u32);
+                    sorts::merge_sort(data_arc_cln.clone(), &sleep_time, 0, len - 1);
                 });
             }
 
@@ -359,7 +373,7 @@ impl SortArray {
         write.arr = (0..write.len()).collect();
     }
 
-    fn shuffle(data: Arc<RwLock<DataArrWrapper>>, passes: u16) {
+    fn shuffle(data: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration, passes: u16) {
         let len = data.read().unwrap().len();
 
         for _ in 0..passes {
@@ -369,8 +383,50 @@ impl SortArray {
                     data_write.swap(i, nannou::rand::random_range(0usize, len));
                     data_write.set_active(i);
                 }
-                thread::sleep(SWAP_SLEEP / len as u32);
+                thread::sleep(*sleep_time);
             }
+        }
+    }
+}
+
+pub struct SleepTimes {
+    pub bubble: Duration,
+    pub cocktail: Duration,
+    pub insertion: Duration,
+    pub selection: Duration,
+    pub shell: Duration,
+    pub comb: Duration,
+    pub quick: Duration,
+    pub merge: Duration,
+    pub radix: Duration,
+
+    pub shuffle: Duration,
+}
+
+impl From<&Yaml> for SleepTimes {
+    fn from(conf: &Yaml) -> Self {
+        #[inline]
+        fn get_sleep_time_from_yaml(yaml: &Yaml, sleep_name: &'static str) -> Duration {
+            let yaml_field = &yaml[sleep_name];
+            Duration::from_millis(
+                yaml_field.as_i64()
+                .expect(
+                    &format!("Could not parse {} as an integer: {:?}", sleep_name, yaml_field)
+                ) as u64
+            )
+        }
+
+        Self {
+            bubble: get_sleep_time_from_yaml(conf, "bubble_sleep"),
+            cocktail: get_sleep_time_from_yaml(conf, "cocktail_shaker_sleep"),
+            insertion: get_sleep_time_from_yaml(conf, "insertion_sleep"),
+            selection: get_sleep_time_from_yaml(conf, "selection_sleep"),
+            shell: get_sleep_time_from_yaml(conf, "shell_sleep"),
+            comb: get_sleep_time_from_yaml(conf, "comb_sleep"),
+            quick: get_sleep_time_from_yaml(conf, "quick_sleep"),
+            merge: get_sleep_time_from_yaml(conf, "merge_sleep"),
+            radix: get_sleep_time_from_yaml(conf, "radix_sleep"),
+            shuffle: get_sleep_time_from_yaml(conf, "shuffle_sleep"),
         }
     }
 }

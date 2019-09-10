@@ -1,3 +1,6 @@
+use std::str::FromStr;
+use std::io::{self, ErrorKind};
+
 // Commands and options
 #[derive(Copy, Clone)]
 pub enum SortInstruction {
@@ -23,6 +26,17 @@ pub enum SortInstruction {
 #[derive(Copy, Clone)]
 pub enum QuickSortType {
     Lomuto,
+}
+
+impl FromStr for QuickSortType {
+    type Err = io::Error;
+
+    fn from_str(s: &str) -> io::Result<Self> {
+        match s.to_lowercase().as_str() {
+            "lomuto" => Ok(QuickSortType::Lomuto),
+            x => Err(io::Error::new(ErrorKind::Other, format!("Invalid quicksort_partitioning format in config file: {}. Options are: lomuto", x))),
+        }
+    }
 }
 
 #[derive(Clone, Copy)]

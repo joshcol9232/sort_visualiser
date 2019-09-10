@@ -1,0 +1,44 @@
+# Array Structure Settings
+array_length: 1000                     # Default: 200. Length of the array when in a single array visualisation.
+multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
+
+# Sound
+sound_file: "./resources/clack.ogg"   # Default: "./resources/clack.ogg". Sound file played when changing active element.
+pitch_diff_multiplier: 3.0            # Default: 3.0. Sound pitch difference multiplier (increases highest pitch).
+
+# Sort specific settings:
+## Quick sort:
+quicksort_partitioning: "lomuto"       # Default: "lomuto". Choices are: "lomuto"
+
+## Radix sort:
+radix_lsd_base: 10                    # Default: 10. Range inclusive from (2, 36).
+
+# --- SLEEP TIMES ---
+# These are applied by dividing the time by the time complexity [O(n)]
+# of the sort, where n is the number of elements in the array, or just
+# by dividing by the number of elements in the array if the time complexity
+# is almost the same as doing that.
+
+## The times below are for each time complexity. You can also change
+## individual sorts in the section below this.
+## To change each time below just change the number, not the whole line.
+_n_squared_slp: &n_squared 80000           # Default: 80000. For O(n^2)
+_n_pow_3_over_2: &n_pow_3_over_2 18000        # Default: 18000. For O[n^(3/2)]
+_n_log_n: &n_log_n 4000                    # Default: 6000. For O[n log n]
+_n_w: &n_w 2000                            # Default: 2000. For O[w * n], where w is the bits required to store each key (Radix Sorts).
+
+## Individual sort times.
+## To change these, replace *x with a number, or change the numbers above
+## so that sorts with the same time complexity can be changed at once.
+bubble_sleep: *n_squared                    # Default: *n_squared.
+cocktail_shaker_sleep: *n_squared           # Default: *n_squared.
+insertion_sleep: *n_squared                 # Default: *n_squared.
+selection_sleep: *n_squared                 # Default: *n_squared.
+shell_sleep: *n_pow_3_over_2                # Default: *n_pow_3_over_2.
+comb_sleep: *n_pow_3_over_2                 # Default: *n_pow_3_over_2.
+quick_sleep: *n_log_n                       # Default: *n_log_n.
+merge_sleep: *n_log_n                       # Default: *n_log_n.
+radix_sleep: *n_w                           # Default: *n_w.
+
+## Shuffle sleep time
+shuffle_sleep: 1                            # Default: 1.

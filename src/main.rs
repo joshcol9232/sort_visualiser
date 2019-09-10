@@ -7,9 +7,14 @@ mod tools;
 use nannou::draw::Draw;
 use nannou::prelude::*;
 
-use crate::sorting_array::{DisplayMode, QuickSortType, SortArray, SortInstruction};
+use crate::sorting_array::{SleepTimes, DisplayMode, QuickSortType, SortArray, SortInstruction};
 
 use std::f32::consts::PI;
+use std::io::{self, Read};
+use std::str::FromStr;
+use std::sync::Arc;
+
+const CONFIG_FILE_LOCATION: &str = "./config.yaml";
 
 pub const TWO_PI: f32 = 2.0 * PI;
 pub const DEFAULT_DATA_LEN: usize = 200;
@@ -20,15 +25,77 @@ fn main() {
     nannou::app(model).update(update).run();
 }
 
-#[derive(Default)]
 struct Model {
     arrays: Vec<SortArray>,
     current_display_mode: DisplayMode,
     window_dims: (f32, f32),
+
     array_len: usize,
+    multi_array_len: usize,
+    sound_file: String,
+    sleep_times: Arc<SleepTimes>,
+    radix_base: usize,
+    quicksort_partition_type: QuickSortType,
+    pitch_diff_multiplier: f32,
 }
 
 impl Model {
+    fn new(len: usize) -> io::Result<Self> {
+        use yaml_rust::YamlLoader;
+        use std::fs;
+        use std::path::Path;
+
+        // Load config file.
+        let mut conf_file_string = String::new();
+        fs::File::open(CONFIG_FILE_LOCATION)?
+            .read_to_string(&mut conf_file_string)?;
+
+        let confs = YamlLoader::load_from_str(&conf_file_string).unwrap();
+        if confs.len() == 0 { panic!("Error: Config file is empty.") }
+        let conf = &confs[0];
+
+        let len = conf["array_length"].as_i64()
+            .expect("Could not parse array_length from config file.") as usize;
+        let multi_len = conf["multi_array_length"].as_i64()
+            .expect("Could not parse multi_array_length from config file.") as usize;
+        let sound_file = conf["sound_file"].as_str()
+            .expect("Could not parse sound_file field in config as a string.")
+            .to_string();
+        let pitch_diff_multiplier = conf["pitch_diff_multiplier"].as_f64()
+            .expect("Could not parse pitch_diff_multiplier in config file as a float.") as f32;
+        let sleep_times = Arc::new(SleepTimes::from(conf));
+        let radix_base = conf["radix_lsd_base"].as_i64()
+            .expect("Could not parse radix_lsd_base as an integer.") as usize;
+        let quicksort_partition_type = QuickSortType::from_str(
+            conf["quicksort_partitioning"].as_str().expect("Could not parse quicksort_partitioning field in config as a string.")
+        ).unwrap();
+
+        if !Path::new(&sound_file).exists() {
+            panic!("Sound file {} could not be found.", sound_file);
+        }
+
+        println!("Config file loaded.");
+
+        Ok(Self {
+            arrays: vec![SortArray::new(
+                len,
+                false,
+                sound_file.clone(),
+                Arc::clone(&sleep_times),
+                pitch_diff_multiplier,
+            )],
+            current_display_mode: DisplayMode::Bars,
+            window_dims: (0.0, 0.0),
+            array_len: len,
+            multi_array_len: multi_len,
+            sound_file,
+            sleep_times,
+            radix_base,
+            quicksort_partition_type,
+            pitch_diff_multiplier,
+        })
+    }
+
     // Sends instruction to all arrays
     fn instruction(&mut self, instruction: SortInstruction) {
         for arr in self.arrays.iter_mut() {
@@ -53,28 +120,32 @@ impl Model {
     fn set_to_single_array(&mut self) {
         self.arrays.clear();
         self.array_len = DEFAULT_DATA_LEN;
-        self.arrays.push(SortArray::new(self.array_len, false));
+        self.arrays.push(SortArray::new(
+            self.array_len,
+            false,
+            self.sound_file.clone(),
+            self.sleep_times.clone(),
+            self.pitch_diff_multiplier,
+        ));
     }
 
     fn set_to_multi_array(&mut self, len: usize) {
         self.arrays.clear();
         for _ in 0..len {
-            self.arrays.push(SortArray::new(self.array_len, true));
+            self.arrays.push(SortArray::new(
+                self.multi_array_len,
+                true,
+                self.sound_file.clone(),
+                self.sleep_times.clone(),
+                self.pitch_diff_multiplier,
+            ));
         }
     }
 }
 
 fn model(app: &App) -> Model {
     app.new_window().event(event).view(view).build().unwrap();
-
-    let model = Model {
-        arrays: vec![SortArray::new(DEFAULT_DATA_LEN, false)],
-        current_display_mode: DisplayMode::Circle,
-        window_dims: (0.0, 0.0),
-        array_len: DEFAULT_DATA_LEN,
-    };
-
-    model
+    Model::new(DEFAULT_DATA_LEN).expect("Could not make model.")
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {

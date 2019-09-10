@@ -1,7 +1,3 @@
-use nannou_audio as audio;
-use audio::Buffer;
-use std::f64::consts::PI;
-
 #[derive(Default)]
 pub struct Audio {
     pub phase: f64,

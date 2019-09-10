@@ -80,10 +80,6 @@ impl DataArrWrapper {
     }
 }
 
-pub enum SoundJob {
-    Play(f32),  // Play(pitch)
-}
-
 pub struct SortArray {
     pub data: Arc<RwLock<DataArrWrapper>>,
     sleep_times: Arc<SleepTimes>,
@@ -91,7 +87,7 @@ pub struct SortArray {
 }
 
 impl SortArray {
-    pub fn new(num_of_lines: usize, part_of_multi: bool, sleep_times: Arc<SleepTimes>) -> SortArray {
+    pub fn new(num_of_lines: usize, sleep_times: Arc<SleepTimes>) -> SortArray {
         SortArray {
             data: Arc::new(RwLock::new(
                 DataArrWrapper::new(
@@ -124,13 +120,11 @@ impl SortArray {
                 });
             }
             SortInstruction::QuickSort(partition_type) => {
-                let len = self.data.read().unwrap().len();
-
                 start_sort_thread!(self, data_arc_cln, {
                     let sleep_time = sleep_times_cln.quick/data_len as u32; //sleep_times_cln.quick/((data_len as f32).log10().floor() as u32 * data_len as u32);
                     match partition_type {
                         QuickSortType::Lomuto => {
-                            sorts::quick_sort_lomuto(data_arc_cln.clone(), &sleep_time, 0, len - 1)
+                            sorts::quick_sort_lomuto(data_arc_cln.clone(), &sleep_time, 0, data_len - 1)
                         }
                     }
                 });
@@ -172,10 +166,9 @@ impl SortArray {
                 });
             }
             SortInstruction::MergeSort => {
-                let len = self.data.read().unwrap().len();
                 start_sort_thread!(self, data_arc_cln, {
                     let sleep_time = sleep_times_cln.merge/data_len as u32; //sleep_times_cln.merge/((data_len as f32).log10().floor() as u32 * data_len as u32);
-                    sorts::merge_sort(data_arc_cln.clone(), &sleep_time, 0, len - 1);
+                    sorts::merge_sort(data_arc_cln.clone(), &sleep_time, 0, data_len - 1);
                 });
             }
 

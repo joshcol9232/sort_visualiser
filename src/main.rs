@@ -21,8 +21,6 @@ const CONFIG_FILE_LOCATION: &str = "./config.yaml";
 
 pub const TWO_PI: f32 = 2.0 * PI;
 pub const DEFAULT_DATA_LEN: usize = 200;
-const MULTI_ARRAY_LEN: usize = 100;
-const RADIX_SORT_BASE: usize = 10; // Supports radix between (inclusive) 2 to 36.
 const SOUND_DURATION: Duration = Duration::from_millis(100);
 
 
@@ -45,10 +43,9 @@ struct Model {
 }
 
 impl Model {
-    fn new(len: usize) -> io::Result<Self> {
+    fn new() -> io::Result<Self> {
         use yaml_rust::YamlLoader;
         use std::fs;
-        use std::path::Path;
 
         // Load config file.
         let mut conf_file_string = String::new();
@@ -90,8 +87,7 @@ impl Model {
 
         Ok(Self {
             arrays: vec![SortArray::new(
-                len,
-                false,
+                len,                
                 Arc::clone(&sleep_times),
             )],
             current_display_mode: DisplayMode::Bars,
@@ -132,7 +128,6 @@ impl Model {
         self.array_len = DEFAULT_DATA_LEN;
         self.arrays.push(SortArray::new(
             self.array_len,
-            false,
             self.sleep_times.clone(),
         ));
     }
@@ -142,7 +137,6 @@ impl Model {
         for _ in 0..len {
             self.arrays.push(SortArray::new(
                 self.multi_array_len,
-                true,
                 self.sleep_times.clone(),
             ));
         }
@@ -156,7 +150,7 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    Model::new(DEFAULT_DATA_LEN).expect("Could not make model.")
+    Model::new().expect("Could not make model.")
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
@@ -172,7 +166,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         }
     }
 
-    {
+    if model.arrays.len() == 1 {
         let mut write = model.arrays[0].data.write().unwrap();
         if write.should_play_sound {
             if let Some(index) = write.active {
@@ -214,7 +208,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 }
                 Key::P => {
                     // Pixel display mode (multi-array)
-                    model.array_len = MULTI_ARRAY_LEN;
+                    model.array_len = model.multi_array_len;
                     // Make it so that each pixel is square.
                     let pixel_size = model.window_dims.0 / model.array_len as f32;
                     let array_num = (model.window_dims.1 / pixel_size).floor() as usize;
@@ -230,9 +224,9 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::Key4 => model.instruction(SortInstruction::SelectionSort),
                 Key::Key5 => model.instruction(SortInstruction::ShellSort),
                 Key::Key6 => model.instruction(SortInstruction::CombSort),
-                Key::Key7 => model.instruction(SortInstruction::QuickSort(QuickSortType::Lomuto)),
+                Key::Key7 => model.instruction(SortInstruction::QuickSort(model.quicksort_partition_type)),
                 Key::Key8 => model.instruction(SortInstruction::MergeSort),
-                Key::Key9 => model.instruction(SortInstruction::RadixSort(RADIX_SORT_BASE)),
+                Key::Key9 => model.instruction(SortInstruction::RadixSort(model.radix_base)),
                 _ => (),
             }
         }

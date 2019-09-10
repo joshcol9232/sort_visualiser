@@ -6,13 +6,16 @@ mod tools;
 
 use nannou::draw::Draw;
 use nannou::prelude::*;
+use nannou_audio::Buffer;
 
-use crate::sorting_array::{SleepTimes, DisplayMode, QuickSortType, SortArray, SortInstruction};
+use crate::sorting_array::{SleepTimes, DisplayMode, QuickSortType, SortArray, SortInstruction, audio::Audio};
 
 use std::f32::consts::PI;
+use std::f64::consts::PI as PIf64;
 use std::io::{self, Read};
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 const CONFIG_FILE_LOCATION: &str = "./config.yaml";
 
@@ -20,6 +23,8 @@ pub const TWO_PI: f32 = 2.0 * PI;
 pub const DEFAULT_DATA_LEN: usize = 200;
 const MULTI_ARRAY_LEN: usize = 100;
 const RADIX_SORT_BASE: usize = 10; // Supports radix between (inclusive) 2 to 36.
+const SOUND_DURATION: Duration = Duration::from_millis(100);
+
 
 fn main() {
     nannou::app(model).update(update).run();
@@ -29,14 +34,14 @@ struct Model {
     arrays: Vec<SortArray>,
     current_display_mode: DisplayMode,
     window_dims: (f32, f32),
+    audio_stream: nannou_audio::Stream<Audio>,
+    audio_time_started: Option<Instant>,
 
     array_len: usize,
     multi_array_len: usize,
-    sound_file: String,
     sleep_times: Arc<SleepTimes>,
     radix_base: usize,
     quicksort_partition_type: QuickSortType,
-    pitch_diff_multiplier: f32,
 }
 
 impl Model {
@@ -58,11 +63,10 @@ impl Model {
             .expect("Could not parse array_length from config file.") as usize;
         let multi_len = conf["multi_array_length"].as_i64()
             .expect("Could not parse multi_array_length from config file.") as usize;
-        let sound_file = conf["sound_file"].as_str()
-            .expect("Could not parse sound_file field in config as a string.")
-            .to_string();
-        let pitch_diff_multiplier = conf["pitch_diff_multiplier"].as_f64()
-            .expect("Could not parse pitch_diff_multiplier in config file as a float.") as f32;
+        let maximum_pitch = conf["maximum_pitch"].as_f64()
+            .expect("Could not parse maximum_pitch field in config as a float.");
+        let minimum_pitch = conf["minimum_pitch"].as_f64()
+            .expect("Could not parse minimum_pitch field in config as a float.");
         let sleep_times = Arc::new(SleepTimes::from(conf));
         let radix_base = conf["radix_lsd_base"].as_i64()
             .expect("Could not parse radix_lsd_base as an integer.") as usize;
@@ -70,29 +74,35 @@ impl Model {
             conf["quicksort_partitioning"].as_str().expect("Could not parse quicksort_partitioning field in config as a string.")
         ).unwrap();
 
-        if !Path::new(&sound_file).exists() {
-            panic!("Sound file {} could not be found.", sound_file);
-        }
-
         println!("Config file loaded.");
+
+        // Load audio.
+        let audio_host = nannou_audio::Host::new();
+
+        let audio_obj = Audio::new(minimum_pitch, maximum_pitch);
+        let stream = audio_host
+            .new_output_stream(audio_obj)
+            .render(audio)
+            .build()
+            .unwrap();
+
+        stream.pause().unwrap();
 
         Ok(Self {
             arrays: vec![SortArray::new(
                 len,
                 false,
-                sound_file.clone(),
                 Arc::clone(&sleep_times),
-                pitch_diff_multiplier,
             )],
             current_display_mode: DisplayMode::Bars,
             window_dims: (0.0, 0.0),
+            audio_stream: stream,
+            audio_time_started: None,
             array_len: len,
             multi_array_len: multi_len,
-            sound_file,
             sleep_times,
             radix_base,
             quicksort_partition_type,
-            pitch_diff_multiplier,
         })
     }
 
@@ -123,9 +133,7 @@ impl Model {
         self.arrays.push(SortArray::new(
             self.array_len,
             false,
-            self.sound_file.clone(),
             self.sleep_times.clone(),
-            self.pitch_diff_multiplier,
         ));
     }
 
@@ -135,22 +143,51 @@ impl Model {
             self.arrays.push(SortArray::new(
                 self.multi_array_len,
                 true,
-                self.sound_file.clone(),
                 self.sleep_times.clone(),
-                self.pitch_diff_multiplier,
             ));
         }
     }
 }
 
 fn model(app: &App) -> Model {
-    app.new_window().event(event).view(view).build().unwrap();
+    app.new_window()
+        .event(event)
+        .view(view)
+        .build()
+        .unwrap();
+
     Model::new(DEFAULT_DATA_LEN).expect("Could not make model.")
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
     let window_rect = app.window_rect();
     model.window_dims = (window_rect.w(), window_rect.h());
+
+    if model.audio_stream.is_playing() {
+        if let Some(time_playing) = model.audio_time_started {
+            if time_playing.elapsed() >= SOUND_DURATION {
+                model.audio_stream.pause().unwrap();
+                model.audio_time_started = None;
+            }
+        }
+    }
+
+    {
+        let mut write = model.arrays[0].data.write().unwrap();
+        if write.should_play_sound {
+            if let Some(index) = write.active {
+                let ratio = write[index] as f64/write.max_val as f64;
+                model.audio_stream.send(move |audio| {
+                    audio.hz = audio.min_hz + (audio.max_hz - audio.min_hz) * ratio;    // Interpolate
+                }).unwrap();
+
+                model.audio_stream.play().unwrap();
+                model.audio_time_started = Some(Instant::now());
+
+                write.should_play_sound = false;
+            }
+        }
+    }
 }
 
 fn event(_app: &App, model: &mut Model, event: WindowEvent) {
@@ -234,4 +271,20 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     model.display(&draw, transformation);
 
     draw.to_frame(app, &frame).unwrap();
+}
+
+fn audio(audio: &mut Audio, buffer: &mut Buffer) {
+    //println!("Rendering audio.");
+    let sample_rate = buffer.sample_rate() as f64;
+
+    for frame in buffer.frames_mut() {
+        let sine_amp = (2.0 * PIf64 * audio.phase).sin() as f32;
+        audio.phase += audio.hz / sample_rate;
+        audio.phase %= sample_rate;
+        if sine_amp >= 0.0 {    // hsin waveform
+            for channel in frame {
+                *channel = sine_amp * audio.volume;
+            }
+        }
+    }
 }

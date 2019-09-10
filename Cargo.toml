@@ -6,11 +6,11 @@ edition = "2018"
 
 [dependencies]
 nannou = "0.10"
+nannou_audio = "0.2"
 shaderc = "0.5"
 shrinkwraprs = "0.2"
 radix = "0.5"
 rayon = "1.2"
-ears = "0.7"
 yaml-rust = "0.4"
 
 [features]

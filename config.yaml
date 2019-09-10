@@ -1,10 +1,10 @@
 # Array Structure Settings
-array_length: 1000                     # Default: 200. Length of the array when in a single array visualisation.
+array_length: 600                     # Default: 200. Length of the array when in a single array visualisation.
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound
-sound_file: "./resources/clack.ogg"   # Default: "./resources/clack.ogg". Sound file played when changing active element.
-pitch_diff_multiplier: 3.0            # Default: 3.0. Sound pitch difference multiplier (increases highest pitch).
+maximum_pitch: 440.0                  # Default: 440.0.
+minimum_pitch: 220.0                  # Default: 220.0.
 
 # Sort specific settings:
 ## Quick sort:

@@ -1,9 +1,11 @@
-use std::sync::{Arc, RwLock, mpsc, Mutex};
+use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::Duration;
 
-use nannou::{draw::Draw, geom::point::Point2};
-use ears::{Sound, AudioController};
+use nannou::{
+    draw::Draw,
+    geom::point::Point2,
+};
 use yaml_rust::Yaml;
 
 use super::{commands::*, sorts};
@@ -43,39 +45,28 @@ pub struct DataArrWrapper {
     pub active: Option<usize>,
     pub active_2: Option<usize>,
     pub pivot: Option<usize>,
+    pub should_play_sound: bool,
     pub sorted: bool,
     pub max_val: usize,
-    sound_job_sender: Option<Arc<Mutex<mpsc::Sender<SoundJob>>>>,
-    pitch_diff_multiplier: f32,
 }
 
 impl DataArrWrapper {
-    pub fn new(arr: Vec<usize>, max_val: usize, sound_job_sender: Option<Arc<Mutex<mpsc::Sender<SoundJob>>>>, pitch_diff_multiplier: f32) -> Self {
+    pub fn new(arr: Vec<usize>, max_val: usize) -> Self {
         Self {
             arr,
             active: None,
             active_2: None,
             pivot: None,
+            should_play_sound: false,
             sorted: true,
             max_val,
-            sound_job_sender,
-            pitch_diff_multiplier,
         }
     }
 
     #[inline]
     pub fn set_active(&mut self, index: usize) {
         self.active = Some(index);
-        // Play sound
-        let pitch = 0.1 + (self.arr[index] as f32/self.max_val as f32) * self.pitch_diff_multiplier;
-        if self.sound_job_sender.is_some() {
-            self.sound_job_sender.as_mut()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .send(SoundJob::Play(pitch))
-                .unwrap();
-        }
+        self.should_play_sound = true;
     }
 
     #[inline]
@@ -100,54 +91,17 @@ pub struct SortArray {
 }
 
 impl SortArray {
-    pub fn new(num_of_lines: usize, part_of_multi: bool, sound_file: String, sleep_times: Arc<SleepTimes>, pitch_diff_multiplier: f32) -> SortArray {
-        let sound_job_sender = if !part_of_multi {
-            Some(Arc::new(Mutex::new(Self::start_sound_thread(sound_file))))
-        } else {
-            None
-        };
-
+    pub fn new(num_of_lines: usize, part_of_multi: bool, sleep_times: Arc<SleepTimes>) -> SortArray {
         SortArray {
             data: Arc::new(RwLock::new(
                 DataArrWrapper::new(
                     (0..num_of_lines).collect(), // Make an array of incrementing numbers up to the length of the array.
                     num_of_lines,
-                    sound_job_sender,
-                    pitch_diff_multiplier,
                 ),
             )), // Then when drawing you can scale it however you want.
             sleep_times,
             sort_thread: None,
         }
-    }
-
-    fn start_sound_thread(sound_file: String) -> mpsc::Sender<SoundJob> {
-        let (sound_job_sender, sound_job_receiver): (mpsc::Sender<SoundJob>, mpsc::Receiver<SoundJob>) = mpsc::channel();
-        let sound_job_receiver = Arc::new(Mutex::new(sound_job_receiver));
-
-        thread::spawn(move || {
-            let mut sound = Sound::new(&sound_file).unwrap();
-
-            loop {
-                match sound_job_receiver.lock().unwrap().recv() {
-                    Ok(job) => {
-                        match job {
-                            SoundJob::Play(pitch) => {
-                                sound.set_pitch(pitch);
-                                //if sound.is_playing() {
-                                //    sound.stop();
-                                //}
-                                sound.play();
-                            }
-                            //SoundJob::Stop => sound.stop(),
-                        }
-                    }
-                    Err(_) => break,
-                }
-            }
-        });
-
-        sound_job_sender
     }
 
     // Easier to handle in here rather than in main

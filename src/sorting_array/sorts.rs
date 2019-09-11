@@ -102,52 +102,6 @@ pub fn cocktail_shaker_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &
     }
 }
 
-pub fn quick_sort_lomuto(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration, l: usize, r: usize) {
-    // Lomuto partition scheme: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
-    // Pretty much copied the pseudocode
-    #[inline]
-    fn partition(
-        data_arc: Arc<RwLock<DataArrWrapper>>,
-        sleep_time: &Duration,
-        l: usize,
-        r: usize,
-    ) -> usize {
-        let pivot = data_arc.read().unwrap()[r];
-        data_arc.write().unwrap().set_pivot(r);
-
-        let mut i = l;
-        for j in l..r {
-            check_for_stop_break!(data_arc);
-            {
-                // Update active info
-                let mut write = data_arc.write().unwrap();
-                write.set_active(i);
-                write.set_active_2(j);
-            }
-
-            if data_arc.read().unwrap()[j] < pivot {
-                data_arc.write().unwrap().swap(i, j);
-                i += 1;
-                thread::sleep(*sleep_time);
-            }
-        }
-
-        data_arc.write().unwrap().swap(i, r);
-        i
-    }
-
-    if l < r {
-        // Not equal
-        let p = partition(data_arc.clone(), sleep_time, l, r);
-        if p > 0 {
-            quick_sort_lomuto(data_arc.clone(), sleep_time, l, p - 1);
-        }
-        if p < r {
-            quick_sort_lomuto(data_arc.clone(), sleep_time, p + 1, r);
-        }
-    }
-}
-
 pub fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration) {
     let len = data_arc.read().unwrap().len();
 
@@ -310,11 +264,96 @@ pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration, b
     }
 }
 
-pub fn merge_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration, l: usize, r: usize) {
-    // Works kind of like pushing the left array into the right array.
-    fn merge(
+pub mod quick_sorting {
+    use std::time::Duration;
+    use std::thread;
+    use std::sync::{Arc, RwLock};
+    use super::*;
+
+    // Lomuto partition scheme: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
+    #[inline]
+    fn lomuto_partitioning(
         data_arc: Arc<RwLock<DataArrWrapper>>,
-        sleep_time: &Duration,
+        sleep_time: Arc<Duration>,
+        l: usize,
+        r: usize,
+    ) -> usize {
+        let pivot = data_arc.read().unwrap()[r];
+        data_arc.write().unwrap().set_pivot(r);
+
+        let mut i = l;
+        for j in l..r {
+            check_for_stop_break!(data_arc);
+            {
+                // Update active info
+                let mut write = data_arc.write().unwrap();
+                write.set_active(i);
+                write.set_active_2(j);
+            }
+
+            if data_arc.read().unwrap()[j] < pivot {
+                data_arc.write().unwrap().swap(i, j);
+                i += 1;
+                thread::sleep(*sleep_time);
+            }
+        }
+
+        data_arc.write().unwrap().swap(i, r);
+        i
+    }
+
+    pub fn quick_sort_lomuto(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: Arc<Duration>, l: usize, r: usize) {
+        if l < r {
+            // Not equal
+            let p = lomuto_partitioning(data_arc.clone(), sleep_time.clone(), l, r);
+            if p > 0 {
+                quick_sort_lomuto(data_arc.clone(), sleep_time.clone(), l, p - 1);
+            }
+            if p < r {
+                quick_sort_lomuto(data_arc.clone(), sleep_time, p + 1, r);
+            }
+        }
+    }
+
+    pub fn quick_sort_lomuto_multithreaded(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: Arc<Duration>, l: usize, r: usize) {
+        if l < r {
+            let mut child_threads: Vec<thread::JoinHandle<()>> = Vec::new();
+
+            // Not equal
+            let p = lomuto_partitioning(data_arc.clone(), sleep_time.clone(), l, r);
+            if p > 0 {
+                let cln = data_arc.clone();
+                let slp_cln = sleep_time.clone();
+                child_threads.push(thread::spawn(move || {
+                    quick_sort_lomuto_multithreaded(cln, slp_cln, l, p - 1);
+                }));
+            }
+            if p < r {
+                let cln = data_arc.clone();
+                let slp_cln = sleep_time.clone();
+                child_threads.push(thread::spawn(move || {
+                    quick_sort_lomuto_multithreaded(cln, slp_cln, p + 1, r);
+                }));
+            }
+
+            for child in child_threads {
+                child.join().unwrap();
+            }
+        } 
+    }
+}
+
+
+pub mod merge_sorting {
+    use std::time::Duration;
+    use std::thread;
+    use std::sync::{Arc, RwLock};
+    use super::*;
+
+    // Works kind of like pushing the left array into the right array.
+    fn merge_in_place(
+        data_arc: Arc<RwLock<DataArrWrapper>>,
+        sleep_time: Arc<Duration>,
         mut start: usize,
         mut mid: usize,
         end: usize,
@@ -362,14 +401,46 @@ pub fn merge_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration, 
         }
     }
 
-    if l < r {
-        check_for_stop!(data_arc);
+    pub fn merge_sort_in_place(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: Arc<Duration>, l: usize, r: usize) {
+        if l < r {
+            check_for_stop!(data_arc);
 
-        let m = (l + r) / 2;
+            let m = (l + r) / 2;
 
-        merge_sort(data_arc.clone(), sleep_time, l, m);
-        merge_sort(data_arc.clone(), sleep_time, m + 1, r);
+            merge_sort_in_place(data_arc.clone(), sleep_time.clone(), l, m);
+            merge_sort_in_place(data_arc.clone(), sleep_time.clone(), m + 1, r);
 
-        merge(data_arc, sleep_time, l, m, r);
+            merge_in_place(data_arc, sleep_time, l, m, r);
+        }
+    }
+
+    pub fn merge_sort_in_place_multithreaded(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: Arc<Duration>, l: usize, r: usize) {
+        if l < r {
+            check_for_stop!(data_arc);
+            let mut child_threads: Vec<thread::JoinHandle<()>> = Vec::new();
+
+            let m = (l + r) / 2;
+
+            let cln = data_arc.clone();
+            let slp_cln = sleep_time.clone();
+            child_threads.push(thread::spawn(move || {
+                merge_sort_in_place_multithreaded(cln, slp_cln, l, m)
+            }));
+
+            let cln = data_arc.clone();
+            let slp_cln = sleep_time.clone();
+            child_threads.push(thread::spawn(move || {
+                merge_sort_in_place_multithreaded(cln, slp_cln, m + 1, r)
+            }));
+
+            for child in child_threads {
+                child.join().unwrap();
+            }
+
+            merge_in_place(data_arc, sleep_time, l, m, r);
+        }
     }
 }
+
+
+// TODO: Make multithreaded quicksort and merge sort!

@@ -18,14 +18,16 @@ pub enum SortInstruction {
     CombSort,
 
     QuickSort(QuickSortType),
-    MergeSort,
+    MergeSort(MergeSortType),
     
     RadixSort(usize),
 }
 
 #[derive(Copy, Clone)]
 pub enum QuickSortType {
-    Lomuto,
+    Lomuto {
+        multithreaded: bool,
+    },
 }
 
 impl FromStr for QuickSortType {
@@ -33,8 +35,36 @@ impl FromStr for QuickSortType {
 
     fn from_str(s: &str) -> io::Result<Self> {
         match s.to_lowercase().as_str() {
-            "lomuto" => Ok(QuickSortType::Lomuto),
-            x => Err(io::Error::new(ErrorKind::Other, format!("Invalid quicksort_partitioning format in config file: {}. Options are: lomuto", x))),
+            "lomuto" => Ok(QuickSortType::Lomuto { multithreaded: false }),
+            "lomuto_multi" => Ok(QuickSortType::Lomuto { multithreaded: true }),
+            x => Err(io::Error::new(
+                ErrorKind::Other,
+                format!("Invalid quicksort_partitioning format in config file: {}. Options are: lomuto, lomuto_multi", x)
+            )),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum MergeSortType {
+    InPlace {
+        multithreaded: bool
+    },
+}
+
+impl FromStr for MergeSortType {
+    type Err = io::Error;
+
+    fn from_str(s: &str) -> io::Result<Self> {
+        match s.to_lowercase().as_str() {
+            "in_place" => Ok(MergeSortType::InPlace { multithreaded: false }),
+            "in_place_multi" => Ok(MergeSortType::InPlace { multithreaded: true }),
+            x => Err(
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("Invalid merge_sort_type format in config file: {}. Options are: in_place, in_place_multi", x)
+                )
+            ),
         }
     }
 }

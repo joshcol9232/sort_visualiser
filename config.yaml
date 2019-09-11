@@ -1,5 +1,5 @@
 # Array Structure Settings
-array_length: 700                     # Default: 200. Length of the array when in a single array visualisation.
+array_length: 6000                     # Default: 200. Length of the array when in a single array visualisation.
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound
@@ -7,12 +7,16 @@ waveform: hsin                    # Default: hsin. Available: sin, hsin, square,
 maximum_pitch: 392.0                  # Default: 525.25. This is C5
 minimum_pitch: 130.81                 # Default: 130.81. This is C3
 
-# Sort specific settings:
-## Quick sort:
-quicksort_partitioning: "lomuto"       # Default: "lomuto". Available: "lomuto"
+# Sort specific settings. Settings ending with "_multi" usually mean
+# that it is multithreaded, unless specified otherwise.
+## Quicksort:
+quicksort_partitioning: "lomuto_multi"       # Default: "lomuto". Available: "lomuto", "lomuto_multi".
+
+## Merge sort:
+merge_sort_type: "in_place_multi"      # Default: "in_place". Available: "in_place", "in_place_multi".
 
 ## Radix sort:
-radix_lsd_base: 2                    # Default: 10. Range inclusive from (2, 36).
+radix_lsd_base: 10                    # Default: 10. Range inclusive from (2, 36).
 
 # --- SLEEP TIMES ---
 # These are applied by dividing the time by the time complexity [O(n)]
@@ -25,7 +29,7 @@ radix_lsd_base: 2                    # Default: 10. Range inclusive from (2, 36)
 ## To change each time below just change the number, not the whole line.
 _n_squared_slp: &n_squared 60000           # Default: 60000. For O(n^2)
 _n_pow_3_over_2: &n_pow_3_over_2 18000     # Default: 18000. For O[n^(3/2)]
-_n_log_n: &n_log_n 4000                    # Default: 4000. For O[n log n]
+_n_log_n: &n_log_n 2000                    # Default: 4000. For O[n log n]
 _n_w: &n_w 1300                            # Default: 1300. For O[w * n], where w is the bits required to store each key (Radix Sorts).
 
 ## Individual sort times.
@@ -41,5 +45,8 @@ quick_sleep: *n_log_n                       # Default: *n_log_n.
 merge_sleep: *n_log_n                       # Default: *n_log_n.
 radix_sleep: *n_w                           # Default: *n_w.
 
-## Shuffle sleep time
-shuffle_sleep: 1                            # Default: 1.
+## Shuffle:
+shuffle_sleep: 10                           # Default: 10. Is divided by number of elements squared.
+
+# Shuffle settings
+shuffle_passes: 3                           # Default: 3. How many times the array is shuffled.

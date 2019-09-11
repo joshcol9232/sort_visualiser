@@ -8,7 +8,7 @@ use nannou::draw::Draw;
 use nannou::prelude::*;
 use nannou_audio::Buffer;
 
-use crate::sorting_array::{SleepTimes, DisplayMode, QuickSortType, SortArray, SortInstruction, audio::{Audio, Waveform}};
+use crate::sorting_array::{SleepTimes, DisplayMode, QuickSortType, MergeSortType, SortArray, SortInstruction, audio::{Audio, Waveform}};
 
 use std::f32::consts::PI;
 use std::f64::consts::PI as PIf64;
@@ -40,6 +40,8 @@ struct Model {
     sleep_times: Arc<SleepTimes>,
     radix_base: usize,
     quicksort_partition_type: QuickSortType,
+    merge_sort_type: MergeSortType,
+    shuffle_passes: u16,
 }
 
 impl Model {
@@ -78,6 +80,13 @@ impl Model {
         let quicksort_partition_type = QuickSortType::from_str(
             conf["quicksort_partitioning"].as_str().expect("Could not parse quicksort_partitioning field in config as a string.")
         ).unwrap();
+        // Merge sort type.
+        let merge_sort_type = MergeSortType::from_str(
+            conf["merge_sort_type"].as_str().expect("Could not parse merge_sort_type field in config as a string.")
+        ).unwrap();
+        // Shuffle passes
+        let shuffle_passes = conf["shuffle_passes"].as_i64()
+            .expect("Could not parse shuffle_passes field in config as an integer.") as u16;
 
         // Load audio.
         let audio_host = nannou_audio::Host::new();
@@ -105,6 +114,8 @@ impl Model {
             sleep_times,
             radix_base,
             quicksort_partition_type,
+            merge_sort_type,
+            shuffle_passes,
         })
     }
 
@@ -195,7 +206,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
         // Keyboard events
         KeyPressed(key) => {
             match key {
-                Key::S => model.instruction(SortInstruction::Shuffle(3)),
+                Key::S => model.instruction(SortInstruction::Shuffle(model.shuffle_passes)),
                 Key::R => model.instruction(SortInstruction::Reset),
                 Key::I => model.instruction(SortInstruction::Reverse),
 
@@ -231,7 +242,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::Key5 => model.instruction(SortInstruction::ShellSort),
                 Key::Key6 => model.instruction(SortInstruction::CombSort),
                 Key::Key7 => model.instruction(SortInstruction::QuickSort(model.quicksort_partition_type)),
-                Key::Key8 => model.instruction(SortInstruction::MergeSort),
+                Key::Key8 => model.instruction(SortInstruction::MergeSort(model.merge_sort_type)),
                 Key::Key9 => model.instruction(SortInstruction::RadixSort(model.radix_base)),
                 _ => (),
             }

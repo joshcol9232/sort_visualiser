@@ -121,10 +121,16 @@ impl SortArray {
             }
             SortInstruction::QuickSort(partition_type) => {
                 start_sort_thread!(self, data_arc_cln, {
-                    let sleep_time = sleep_times_cln.quick/data_len as u32; //sleep_times_cln.quick/((data_len as f32).log10().floor() as u32 * data_len as u32);
+                    let sleep_time = Arc::new(sleep_times_cln.quick/data_len as u32); //sleep_times_cln.quick/((data_len as f32).log10().floor() as u32 * data_len as u32);
                     match partition_type {
-                        QuickSortType::Lomuto => {
-                            sorts::quick_sort_lomuto(data_arc_cln.clone(), &sleep_time, 0, data_len - 1)
+                        QuickSortType::Lomuto {
+                            multithreaded,
+                        } => {
+                            if multithreaded {
+                                sorts::quick_sorting::quick_sort_lomuto_multithreaded(data_arc_cln.clone(), sleep_time, 0, data_len - 1)
+                            } else {
+                                sorts::quick_sorting::quick_sort_lomuto(data_arc_cln.clone(), sleep_time, 0, data_len - 1)
+                            }
                         }
                     }
                 });
@@ -165,11 +171,24 @@ impl SortArray {
                     sorts::radix_lsd(data_arc_cln.clone(), &sleep_time, base);
                 });
             }
-            SortInstruction::MergeSort => {
-                start_sort_thread!(self, data_arc_cln, {
-                    let sleep_time = sleep_times_cln.merge/data_len as u32; //sleep_times_cln.merge/((data_len as f32).log10().floor() as u32 * data_len as u32);
-                    sorts::merge_sort(data_arc_cln.clone(), &sleep_time, 0, data_len - 1);
-                });
+            SortInstruction::MergeSort(merge_type) => {
+                match merge_type {
+                    MergeSortType::InPlace {
+                        multithreaded,
+                    } => {
+                        if multithreaded {
+                            start_sort_thread!(self, data_arc_cln, {
+                                let sleep_time = Arc::new(sleep_times_cln.merge/data_len as u32); //sleep_times_cln.merge/((data_len as f32).log10().floor() as u32 * data_len as u32);
+                                sorts::merge_sorting::merge_sort_in_place_multithreaded(data_arc_cln.clone(), sleep_time, 0, data_len - 1);
+                            });
+                        } else {
+                            start_sort_thread!(self, data_arc_cln, {
+                                let sleep_time = Arc::new(sleep_times_cln.merge/data_len as u32); //sleep_times_cln.merge/((data_len as f32).log10().floor() as u32 * data_len as u32);
+                                sorts::merge_sorting::merge_sort_in_place(data_arc_cln.clone(), sleep_time, 0, data_len - 1);
+                            });
+                        }
+                    }
+                }
             }
 
             SortInstruction::Reset => {

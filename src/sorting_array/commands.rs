@@ -23,7 +23,7 @@ pub enum SortInstruction {
     RadixSort(usize),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum QuickSortType {
     Lomuto {
         multithreaded: bool,
@@ -45,7 +45,7 @@ impl FromStr for QuickSortType {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum MergeSortType {
     InPlace {
         multithreaded: bool

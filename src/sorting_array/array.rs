@@ -6,10 +6,9 @@ use nannou::{
     draw::Draw,
     geom::point::Point2,
 };
-use yaml_rust::Yaml;
 
 use super::{commands::*, sorts};
-use crate::{tools, TWO_PI};
+use crate::{tools, TWO_PI, config::SleepTimes};
 
 macro_rules! start_sort_thread {
     // Starts a sorting thread (common pattern)
@@ -333,7 +332,7 @@ impl SortArray {
         write.sorted = true;
     }
 
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         Self::reset_arr_info(self.data.clone());
         let mut write = self.data.write().unwrap();
         write.arr = (0..write.len()).collect();
@@ -351,48 +350,6 @@ impl SortArray {
                 }
                 thread::sleep(*sleep_time);
             }
-        }
-    }
-}
-
-pub struct SleepTimes {
-    pub bubble: Duration,
-    pub cocktail: Duration,
-    pub insertion: Duration,
-    pub selection: Duration,
-    pub shell: Duration,
-    pub comb: Duration,
-    pub quick: Duration,
-    pub merge: Duration,
-    pub radix: Duration,
-
-    pub shuffle: Duration,
-}
-
-impl From<&Yaml> for SleepTimes {
-    fn from(conf: &Yaml) -> Self {
-        #[inline]
-        fn get_sleep_time_from_yaml(yaml: &Yaml, sleep_name: &'static str) -> Duration {
-            let yaml_field = &yaml[sleep_name];
-            Duration::from_millis(
-                yaml_field.as_i64()
-                .expect(
-                    &format!("Could not parse {} as an integer: {:?}", sleep_name, yaml_field)
-                ) as u64
-            )
-        }
-
-        Self {
-            bubble: get_sleep_time_from_yaml(conf, "bubble_sleep"),
-            cocktail: get_sleep_time_from_yaml(conf, "cocktail_shaker_sleep"),
-            insertion: get_sleep_time_from_yaml(conf, "insertion_sleep"),
-            selection: get_sleep_time_from_yaml(conf, "selection_sleep"),
-            shell: get_sleep_time_from_yaml(conf, "shell_sleep"),
-            comb: get_sleep_time_from_yaml(conf, "comb_sleep"),
-            quick: get_sleep_time_from_yaml(conf, "quick_sleep"),
-            merge: get_sleep_time_from_yaml(conf, "merge_sleep"),
-            radix: get_sleep_time_from_yaml(conf, "radix_sleep"),
-            shuffle: get_sleep_time_from_yaml(conf, "shuffle_sleep"),
         }
     }
 }

@@ -3,12 +3,17 @@ extern crate shrinkwraprs;
 
 mod sorting_array;
 mod tools;
+pub mod config;
 
 use nannou::draw::Draw;
 use nannou::prelude::*;
 use nannou_audio::Buffer;
+use yaml_rust::Yaml;
 
-use crate::sorting_array::{SleepTimes, DisplayMode, QuickSortType, MergeSortType, SortArray, SortInstruction, audio::{Audio, Waveform}};
+use crate::{
+    sorting_array::{DisplayMode, SortArray, SortInstruction, audio::{Audio, Waveform}},
+    config::Config,
+};
 
 use std::f32::consts::PI;
 use std::f64::consts::PI as PIf64;
@@ -20,7 +25,6 @@ use std::time::{Duration, Instant};
 const CONFIG_FILE_LOCATION: &str = "./config.yaml";
 
 pub const TWO_PI: f32 = 2.0 * PI;
-pub const DEFAULT_DATA_LEN: usize = 200;
 const SOUND_DURATION: Duration = Duration::from_millis(100);
 
 
@@ -34,36 +38,16 @@ struct Model {
     window_dims: (f32, f32),
     audio_stream: nannou_audio::Stream<Audio>,
     audio_time_started: Option<Instant>,
-
     array_len: usize,
-    multi_array_len: usize,
-    sleep_times: Arc<SleepTimes>,
-    radix_base: usize,
-    quicksort_partition_type: QuickSortType,
-    merge_sort_type: MergeSortType,
-    shuffle_passes: u16,
+    config: Config,
 }
 
 impl Model {
     fn new() -> io::Result<Self> {
-        use yaml_rust::YamlLoader;
-        use std::fs;
-
-        // Load config file.
-        let mut conf_file_string = String::new();
-        fs::File::open(CONFIG_FILE_LOCATION)?
-            .read_to_string(&mut conf_file_string)?;
-
-        let confs = YamlLoader::load_from_str(&conf_file_string).unwrap();
-        if confs.len() == 0 { panic!("Error: Config file is empty.") }
-        let conf = &confs[0];
-
-        // Array structure
-        let len = conf["array_length"].as_i64()
-            .expect("Could not parse array_length from config file.") as usize;
-        let multi_len = conf["multi_array_length"].as_i64()
-            .expect("Could not parse multi_array_length from config file.") as usize;
-        // Sound
+        let conf = &Self::load_config_file()?[0];
+        let config_obj = Config::from(conf);
+ 
+        // Sound. Sound settings cannot be reloaded without restarting the program.
         let waveform = Waveform::from_str(conf["waveform"].as_str()
             .expect("Could not parse waveform field in config as a string.")
         ).unwrap();
@@ -71,22 +55,6 @@ impl Model {
             .expect("Could not parse maximum_pitch field in config as a float.");
         let minimum_pitch = conf["minimum_pitch"].as_f64()
             .expect("Could not parse minimum_pitch field in config as a float.");
-        // Sleep times
-        let sleep_times = Arc::new(SleepTimes::from(conf));
-        // Radix base
-        let radix_base = conf["radix_lsd_base"].as_i64()
-            .expect("Could not parse radix_lsd_base as an integer.") as usize;
-        // Quicksort type.
-        let quicksort_partition_type = QuickSortType::from_str(
-            conf["quicksort_partitioning"].as_str().expect("Could not parse quicksort_partitioning field in config as a string.")
-        ).unwrap();
-        // Merge sort type.
-        let merge_sort_type = MergeSortType::from_str(
-            conf["merge_sort_type"].as_str().expect("Could not parse merge_sort_type field in config as a string.")
-        ).unwrap();
-        // Shuffle passes
-        let shuffle_passes = conf["shuffle_passes"].as_i64()
-            .expect("Could not parse shuffle_passes field in config as an integer.") as u16;
 
         // Load audio.
         let audio_host = nannou_audio::Host::new();
@@ -102,21 +70,29 @@ impl Model {
 
         Ok(Self {
             arrays: vec![SortArray::new(
-                len,                
-                Arc::clone(&sleep_times),
+                config_obj.array_len,
+                Arc::clone(&config_obj.sleep_times),
             )],
             current_display_mode: DisplayMode::Bars,
             window_dims: (0.0, 0.0),
             audio_stream: stream,
             audio_time_started: None,
-            array_len: len,
-            multi_array_len: multi_len,
-            sleep_times,
-            radix_base,
-            quicksort_partition_type,
-            merge_sort_type,
-            shuffle_passes,
+            array_len: config_obj.array_len,
+            config: config_obj,
         })
+    }
+
+    fn load_config_file() -> io::Result<Vec<Yaml>> {
+        use yaml_rust::YamlLoader;
+        use std::fs;
+
+        let mut conf_file_string = String::new();
+        fs::File::open(CONFIG_FILE_LOCATION)?
+            .read_to_string(&mut conf_file_string)?;
+
+        let confs = YamlLoader::load_from_str(&conf_file_string).unwrap();
+        if confs.len() == 0 { panic!("Error: Config file is empty.") }
+        Ok(confs)
     }
 
     // Sends instruction to all arrays
@@ -142,21 +118,27 @@ impl Model {
 
     fn set_to_single_array(&mut self) {
         self.arrays.clear();
-        self.array_len = DEFAULT_DATA_LEN;
+        self.array_len = self.config.array_len;
         self.arrays.push(SortArray::new(
-            self.array_len,
-            self.sleep_times.clone(),
+            self.config.array_len,
+            self.config.sleep_times.clone(),
         ));
     }
 
-    fn set_to_multi_array(&mut self, len: usize) {
+    fn set_to_multi_array(&mut self, array_num: usize) {
         self.arrays.clear();
-        for _ in 0..len {
+        for _ in 0..array_num {
             self.arrays.push(SortArray::new(
-                self.multi_array_len,
-                self.sleep_times.clone(),
+                self.config.multi_array_len,
+                self.config.sleep_times.clone(),
             ));
         }
+    }
+
+    #[inline]
+    fn reload_config(&mut self) {
+        self.config = Config::from(&Self::load_config_file().unwrap()[0]);
+        self.set_to_single_array();
     }
 }
 
@@ -206,9 +188,10 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
         // Keyboard events
         KeyPressed(key) => {
             match key {
-                Key::S => model.instruction(SortInstruction::Shuffle(model.shuffle_passes)),
+                Key::S => model.instruction(SortInstruction::Shuffle(model.config.shuffle_passes)),
                 Key::R => model.instruction(SortInstruction::Reset),
                 Key::I => model.instruction(SortInstruction::Reverse),
+                Key::L => model.reload_config(),
 
                 Key::C | Key::B | Key::D => {
                     if model.arrays.len() > 1 {
@@ -225,7 +208,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 }
                 Key::P => {
                     // Pixel display mode (multi-array)
-                    model.array_len = model.multi_array_len;
+                    model.array_len = model.config.multi_array_len;
                     // Make it so that each pixel is square.
                     let pixel_size = model.window_dims.0 / model.array_len as f32;
                     let array_num = (model.window_dims.1 / pixel_size).floor() as usize;
@@ -241,9 +224,9 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::Key4 => model.instruction(SortInstruction::SelectionSort),
                 Key::Key5 => model.instruction(SortInstruction::ShellSort),
                 Key::Key6 => model.instruction(SortInstruction::CombSort),
-                Key::Key7 => model.instruction(SortInstruction::QuickSort(model.quicksort_partition_type)),
-                Key::Key8 => model.instruction(SortInstruction::MergeSort(model.merge_sort_type)),
-                Key::Key9 => model.instruction(SortInstruction::RadixSort(model.radix_base)),
+                Key::Key7 => model.instruction(SortInstruction::QuickSort(model.config.quicksort_partition_type)),
+                Key::Key8 => model.instruction(SortInstruction::MergeSort(model.config.merge_sort_type)),
+                Key::Key9 => model.instruction(SortInstruction::RadixSort(model.config.radix_base)),
                 _ => (),
             }
         }

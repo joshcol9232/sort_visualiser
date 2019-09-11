@@ -58,9 +58,11 @@ Does not display active elements etc because it would be a bit too cluttered.
 **4** | Selection Sort.
 **5** | Shell Sort.
 **6** | Comb Sort (very similar to shell sort).
-**7** | Quicksort (Lomuto partitioning).
-**8** | Merge Sort.
+**7** | Quicksort: <ul><li>Lomuto Partitioning</li><li>Multithreaded Lomuto Partitioning</li></ul>
+**8** | Merge Sort: <ul><li>In-place</li><li>Multithreaded In-place</li></ul>
 **9** | Radix LSD Sort (Base 10).
+
+Ones with multiple options can be changed easily in the `config.yaml` file.
 
 You can do multiple sorts at once but be careful since this can ruin the array (however you can reset by pressing **R**).
 
@@ -73,8 +75,11 @@ NOTE: Due to Quicksort's Lomuto partitioning scheme, sorting the sorted or rever
 **R** | Reset array.
 **I** | Invert/reverse array.
 **Q** | Cancel current sort.
+**L** | Reload config file.
 
 Resetting the array regenerates all of the elements in the array, so if you ever have any problems with the array, for example duplicate array elements due to running multiple sorts, then reset the array and you should be good to go.
+
+NOTE: Reloading the config file does not reload audio settings, for that you need to restart the program.
 
 #### Display modes:
 **Key** | **Sort**

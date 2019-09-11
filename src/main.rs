@@ -8,7 +8,7 @@ use nannou::draw::Draw;
 use nannou::prelude::*;
 use nannou_audio::Buffer;
 
-use crate::sorting_array::{SleepTimes, DisplayMode, QuickSortType, SortArray, SortInstruction, audio::Audio};
+use crate::sorting_array::{SleepTimes, DisplayMode, QuickSortType, SortArray, SortInstruction, audio::{Audio, Waveform}};
 
 use std::f32::consts::PI;
 use std::f64::consts::PI as PIf64;
@@ -56,17 +56,25 @@ impl Model {
         if confs.len() == 0 { panic!("Error: Config file is empty.") }
         let conf = &confs[0];
 
+        // Array structure
         let len = conf["array_length"].as_i64()
             .expect("Could not parse array_length from config file.") as usize;
         let multi_len = conf["multi_array_length"].as_i64()
             .expect("Could not parse multi_array_length from config file.") as usize;
+        // Sound
+        let waveform = Waveform::from_str(conf["waveform"].as_str()
+            .expect("Could not parse waveform field in config as a string.")
+        ).unwrap();
         let maximum_pitch = conf["maximum_pitch"].as_f64()
             .expect("Could not parse maximum_pitch field in config as a float.");
         let minimum_pitch = conf["minimum_pitch"].as_f64()
             .expect("Could not parse minimum_pitch field in config as a float.");
+        // Sleep times
         let sleep_times = Arc::new(SleepTimes::from(conf));
+        // Radix base
         let radix_base = conf["radix_lsd_base"].as_i64()
             .expect("Could not parse radix_lsd_base as an integer.") as usize;
+        // Quicksort type.
         let quicksort_partition_type = QuickSortType::from_str(
             conf["quicksort_partitioning"].as_str().expect("Could not parse quicksort_partitioning field in config as a string.")
         ).unwrap();
@@ -74,10 +82,10 @@ impl Model {
         // Load audio.
         let audio_host = nannou_audio::Host::new();
 
-        let audio_obj = Audio::new(minimum_pitch, maximum_pitch);
+        let audio_obj = Audio::new(minimum_pitch, maximum_pitch, waveform);
         let stream = audio_host
             .new_output_stream(audio_obj)
-            .render(audio)
+            .render(audio_render)
             .build()
             .unwrap();
 
@@ -148,7 +156,7 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    Model::new().expect("Could not make model.")
+    Model::new().unwrap()
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
@@ -164,10 +172,10 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         }
     }
 
-    if model.arrays.len() == 1 {
+    if model.arrays.len() == 1 {        // If only a single array, then play a sound.
         let mut write = model.arrays[0].data.write().unwrap();
         if write.should_play_sound {
-            if let Some(index) = write.active {
+            if let Some(index) = write.active {     // If a sound should be played, and there is a current index
                 let ratio = write[index] as f64/write.max_val as f64;
                 model.audio_stream.send(move |audio| {
                     audio.hz = audio.min_hz + (audio.max_hz - audio.min_hz) * ratio;    // Interpolate
@@ -265,18 +273,23 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     draw.to_frame(app, &frame).unwrap();
 }
 
-fn audio(audio: &mut Audio, buffer: &mut Buffer) {
-    //println!("Rendering audio.");
+pub fn audio_render(audio: &mut Audio, buffer: &mut Buffer) {
     let sample_rate = buffer.sample_rate() as f64;
 
     for frame in buffer.frames_mut() {
-        let sine_amp = (2.0 * PIf64 * audio.phase).sin() as f32;
+        let sin_amp = (2.0 * PIf64 * audio.phase).sin() as f32;
+
+        let waveform_amp = match audio.waveform {
+            Waveform::Sine => sin_amp,
+            Waveform::Haversine => sin_amp.max(0.0),    // > 0.0
+            Waveform::Square => (((sin_amp + 1.0)/2.0).round() - 0.5) * 2.0,
+            Waveform::Triangle => sin_amp.round(),
+        };
+
         audio.phase += audio.hz / sample_rate;
         audio.phase %= sample_rate;
-        if sine_amp >= 0.0 {    // hsin waveform
-            for channel in frame {
-                *channel = sine_amp * audio.volume;
-            }
+        for channel in frame {
+            *channel = waveform_amp * audio.volume;
         }
     }
 }

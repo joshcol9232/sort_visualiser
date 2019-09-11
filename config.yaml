@@ -1,14 +1,15 @@
 # Array Structure Settings
-array_length: 200                     # Default: 200. Length of the array when in a single array visualisation.
+array_length: 700                     # Default: 200. Length of the array when in a single array visualisation.
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound
-maximum_pitch: 380.0                  # Default: 380.0.
-minimum_pitch: 180.0                  # Default: 180.0.
+waveform: hsin                    # Default: hsin. Available: sin, hsin, square, triangle
+maximum_pitch: 392.0                  # Default: 525.25. This is C5
+minimum_pitch: 130.81                 # Default: 130.81. This is C3
 
 # Sort specific settings:
 ## Quick sort:
-quicksort_partitioning: "lomuto"       # Default: "lomuto". Choices are: "lomuto"
+quicksort_partitioning: "lomuto"       # Default: "lomuto". Available: "lomuto"
 
 ## Radix sort:
 radix_lsd_base: 2                    # Default: 10. Range inclusive from (2, 36).

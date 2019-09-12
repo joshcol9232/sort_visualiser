@@ -158,12 +158,6 @@ impl SortArray {
                     sorts::shell_sort(data_arc_cln.clone(), &sleep_time);
                 });
             }
-            SortInstruction::CombSort => {
-                start_sort_thread!(self, data_arc_cln, {
-                    let sleep_time = sleep_times_cln.comb/((data_len as f32).powf(3.0/2.0).floor() as u32);
-                    sorts::comb_sort(data_arc_cln.clone(), &sleep_time);
-                });
-            }
             SortInstruction::RadixSort(base) => {
                 start_sort_thread!(self, data_arc_cln, {
                     let sleep_time = sleep_times_cln.radix/data_len as u32;

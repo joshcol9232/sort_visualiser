@@ -4,8 +4,8 @@ multi_array_length: 100               # Default: 100. Length of the arrays when 
 
 # Sound
 waveform: hsin                        # Default: hsin. Available: sin, hsin, square, triangle
-maximum_pitch: 392.0                  # Default: 525.25. This is C5
-minimum_pitch: 130.81                 # Default: 130.81. This is C3
+maximum_pitch: 392.0                  # Default: 392.0.
+minimum_pitch: 130.81                 # Default: 130.81.
 
 # Sort specific settings. Settings ending with "_multi" usually mean
 # that it is multithreaded, unless specified otherwise.

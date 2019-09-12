@@ -15,7 +15,6 @@ pub enum SortInstruction {
     SelectionSort,
 
     ShellSort,
-    CombSort,
 
     QuickSort(QuickSortType),
     MergeSort(MergeSortType),

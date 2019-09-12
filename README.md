@@ -57,10 +57,9 @@ Does not display active elements etc because it would be a bit too cluttered.
 **3** | Insertion Sort.
 **4** | Selection Sort.
 **5** | Shell Sort.
-**6** | Comb Sort (very similar to shell sort).
-**7** | Quicksort: <ul><li>Lomuto Partitioning</li><li>Multithreaded Lomuto Partitioning</li></ul>
-**8** | Merge Sort: <ul><li>In-place</li><li>Multithreaded In-place</li></ul>
-**9** | Radix LSD Sort (Base 10).
+**6** | Quicksort: <ul><li>Lomuto Partitioning</li><li>Multithreaded Lomuto Partitioning</li></ul>
+**7** | Merge Sort: <ul><li>In-place</li><li>Multithreaded In-place</li></ul>
+**8** | Radix LSD Sort (Base 10).
 
 Ones with multiple options can be changed easily in the `config.yaml` file.
 

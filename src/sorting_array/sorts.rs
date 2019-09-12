@@ -22,30 +22,6 @@ macro_rules! check_for_stop_break {
     };
 }
 
-// Duplicate code in shell sort and comb sort. Not a function because of borrowing issues.
-macro_rules! comb {
-    ($data_arc:expr, $gap:expr, $len:expr, $sleep_time:expr) => {
-        for i in $gap..$len {
-            check_for_stop!($data_arc.clone());
-            let temp = $data_arc.read().unwrap()[i];
-
-            let mut j = i;
-            while j >= $gap && $data_arc.read().unwrap()[j - $gap] > temp {
-                {
-                    let mut write = $data_arc.write().unwrap();
-                    write.set_active(j - $gap);
-                    write.set_active_2(j);
-                    write[j] = write[j - $gap];
-                }
-
-                j -= $gap;
-                thread::sleep(*$sleep_time);
-            }
-            $data_arc.write().unwrap()[j] = temp;
-        }
-    };
-}
-
 // Shared by bubble sort and cocktail shaker sort.
 macro_rules! bubble {
     ($data_arc:expr, $swapped:expr, $i:expr, $sleep_time:expr) => {
@@ -179,18 +155,24 @@ pub fn shell_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration) 
 
     for gap in gaps.into_iter().rev() {
         check_for_stop!(data_arc);
-        comb!(data_arc, gap, len, sleep_time);
-    }
-}
+        for i in gap..len {
+            check_for_stop!(data_arc.clone());
+            let temp = data_arc.read().unwrap()[i];
 
-pub fn comb_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration) {
-    let len = data_arc.read().unwrap().len();
-    let mut comb_len = len / 2;
+            let mut j = i;
+            while j >= gap && data_arc.read().unwrap()[j - gap] > temp {
+                {
+                    let mut write = data_arc.write().unwrap();
+                    write.set_active(j - gap);
+                    write.set_active_2(j);
+                    write[j] = write[j - gap];
+                }
 
-    while comb_len >= 1 {
-        check_for_stop!(data_arc);
-        comb!(data_arc, comb_len, len, sleep_time);
-        comb_len /= 2;
+                j -= gap;
+                thread::sleep(*sleep_time);
+            }
+            data_arc.write().unwrap()[j] = temp;
+        }
     }
 }
 
@@ -343,7 +325,6 @@ pub mod quick_sorting {
     }
 }
 
-
 pub mod merge_sorting {
     use std::time::Duration;
     use std::thread;
@@ -441,6 +422,3 @@ pub mod merge_sorting {
         }
     }
 }
-
-
-// TODO: Make multithreaded quicksort and merge sort!

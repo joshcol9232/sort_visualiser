@@ -223,10 +223,9 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::Key3 => model.instruction(SortInstruction::InsertionSort),
                 Key::Key4 => model.instruction(SortInstruction::SelectionSort),
                 Key::Key5 => model.instruction(SortInstruction::ShellSort),
-                Key::Key6 => model.instruction(SortInstruction::CombSort),
-                Key::Key7 => model.instruction(SortInstruction::QuickSort(model.config.quicksort_partition_type)),
-                Key::Key8 => model.instruction(SortInstruction::MergeSort(model.config.merge_sort_type)),
-                Key::Key9 => model.instruction(SortInstruction::RadixSort(model.config.radix_base)),
+                Key::Key6 => model.instruction(SortInstruction::QuickSort(model.config.quicksort_partition_type)),
+                Key::Key7 => model.instruction(SortInstruction::MergeSort(model.config.merge_sort_type)),
+                Key::Key8 => model.instruction(SortInstruction::RadixSort(model.config.radix_base)),
                 _ => (),
             }
         }

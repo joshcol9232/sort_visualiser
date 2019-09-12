@@ -40,7 +40,6 @@ cocktail_shaker_sleep: *n_squared           # Default: *n_squared.
 insertion_sleep: *n_squared                 # Default: *n_squared.
 selection_sleep: *n_squared                 # Default: *n_squared.
 shell_sleep: *n_pow_3_over_2                # Default: *n_pow_3_over_2.
-comb_sleep: *n_pow_3_over_2                 # Default: *n_pow_3_over_2.
 quick_sleep: *n_log_n                       # Default: *n_log_n.
 merge_sleep: *n_log_n                       # Default: *n_log_n.
 radix_sleep: *n_w                           # Default: *n_w.

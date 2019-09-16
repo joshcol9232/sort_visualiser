@@ -10,7 +10,6 @@ nannou_audio = "0.2"
 shaderc = "0.5"
 shrinkwraprs = "0.2"
 radix = "0.5"
-rayon = "1.2"
 yaml-rust = "0.4"
 
 [features]

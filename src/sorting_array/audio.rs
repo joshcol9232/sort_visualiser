@@ -16,7 +16,7 @@ impl Audio {
         Self {
             min_hz,
             max_hz,
-            volume: 1.0,
+            volume: 0.25,
             waveform,
             ..Default::default()
         }

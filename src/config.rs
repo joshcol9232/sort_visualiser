@@ -60,9 +60,7 @@ impl From<&Yaml> for SleepTimes {
             let yaml_field = &yaml[sleep_name];
             Duration::from_millis(
                 yaml_field.as_i64()
-                .expect(
-                    &format!("Could not parse {} as an integer: {:?}", sleep_name, yaml_field)
-                ) as u64
+                    .unwrap_or_else(|| panic!("Could not parse {} as an integer: {:?}", sleep_name, yaml_field)) as u64
             )
         }
 

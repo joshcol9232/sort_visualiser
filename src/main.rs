@@ -91,7 +91,7 @@ impl Model {
             .read_to_string(&mut conf_file_string)?;
 
         let confs = YamlLoader::load_from_str(&conf_file_string).unwrap();
-        if confs.len() == 0 { panic!("Error: Config file is empty.") }
+        if confs.is_empty() { panic!("Error: Config file is empty.") }
         Ok(confs)
     }
 

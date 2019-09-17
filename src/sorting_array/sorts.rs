@@ -85,7 +85,7 @@ pub fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Durati
         check_for_stop!(data_arc);
         data_arc.write().unwrap().set_pivot(i);
 
-        for j in (1..i + 1).rev() {
+        for j in (1..=i).rev() {
             data_arc.write().unwrap().set_active(j);
             {
                 let read = data_arc.read().unwrap();
@@ -219,7 +219,7 @@ pub fn radix_lsd(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration, b
                 let digit = get_digit_at(*num, digit_num, base);
                 let bucket = buckets
                     .entry(digit)
-                    .or_insert(Vec::with_capacity(array_len));
+                    .or_insert_with(|| Vec::with_capacity(array_len));
 
                 bucket.push(*num);
             }
@@ -341,20 +341,22 @@ pub mod merge_sorting {
     ) {
         let mut start2 = mid + 1;
 
-        if {
+        let mid_less_than_start2 = {
             let read = data_arc.read().unwrap();
             read[mid] <= read[start2]
-        } {
-            return;
+        };
+        if mid_less_than_start2 {
+            return; // Exit
         }
 
         while start <= mid && start2 <= end {
             check_for_stop!(data_arc);
 
-            if {
+            let start_less_than_start2 = {
                 let read = data_arc.read().unwrap();
                 read[start] <= read[start2]
-            } {
+            };
+            if start_less_than_start2 { // Then it is in the correct place.
                 start += 1;
             } else {
                 // if element 1 is not in the right place, move it until it is.

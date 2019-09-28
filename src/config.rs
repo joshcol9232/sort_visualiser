@@ -9,6 +9,7 @@ use crate::sorting_array::{QuickSortType, MergeSortType};
 pub struct Config {
     pub array_len: usize,
     pub multi_array_len: usize,
+    pub sound_enabled: bool,
     pub sleep_times: Arc<SleepTimes>,
     pub radix_base: usize,
     pub quicksort_partition_type: QuickSortType,
@@ -24,6 +25,8 @@ impl From<&Yaml> for Config {
                 .expect("Could not parse array_length from config file.") as usize,
             multi_array_len: conf["multi_array_length"].as_i64()
                 .expect("Could not parse multi_array_length from config file.") as usize,
+            sound_enabled: conf["sound_enabled"].as_bool()
+                .expect("Could not parse sound_enabled from config file as a booleon.") as bool,
             sleep_times: Arc::new(SleepTimes::from(conf)),
             radix_base: conf["radix_lsd_base"].as_i64()
                 .expect("Could not parse radix_lsd_base as an integer.") as usize,

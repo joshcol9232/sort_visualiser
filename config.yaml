@@ -3,6 +3,7 @@ array_length: 200                     # Default: 200. Length of the array when i
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound
+sound_enabled: false                  # Default: true
 waveform: hsin                        # Default: hsin. Available: sin, hsin, square, triangle
 maximum_pitch: 392.0                  # Default: 392.0.
 minimum_pitch: 130.81                 # Default: 130.81.
@@ -16,7 +17,7 @@ quicksort_partitioning: "lomuto"      # Default: "lomuto". Available: "lomuto", 
 merge_sort_type: "in_place_multi"     # Default: "in_place". Available: "in_place", "in_place_multi".
 
 ## Radix sort:
-radix_lsd_base: 10                    # Default: 10. Range inclusive from (2, 36).
+radix_lsd_base: 2                    # Default: 10. Range inclusive from (2, 36).
 
 # --- SLEEP TIMES ---
 # These are applied by dividing the time by the time complexity [O(n)]

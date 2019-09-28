@@ -59,7 +59,11 @@ impl Model {
         // Load audio.
         let audio_host = nannou_audio::Host::new();
 
-        let audio_obj = Audio::new(minimum_pitch, maximum_pitch, waveform);
+        let mut audio_obj = Audio::new(minimum_pitch, maximum_pitch, waveform);
+        if !config_obj.sound_enabled {
+            audio_obj.volume = 0.0;
+        }
+
         let stream = audio_host
             .new_output_stream(audio_obj)
             .render(audio_render)

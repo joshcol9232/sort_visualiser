@@ -225,7 +225,7 @@ impl SortArray {
                         .x_y(transform.0, transform.1)
                         .start(Point2::new(x, 0.0))
                         .end(Point2::new(x, (*d as f32 + 1.0) * scale.1))
-                        .thickness(scale.0);
+                        .weight(scale.0);
 
                     colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);
                 }

@@ -5,9 +5,9 @@ authors = ["eggmund <joshuacolclough2@googlemail.com>"]
 edition = "2018"
 
 [dependencies]
-nannou = "0.10"
+nannou = "0.11"
 nannou_audio = "0.2"
-shaderc = "0.5"
+shaderc = "0.6"
 shrinkwraprs = "0.2"
 radix = "0.5"
 yaml-rust = "0.4"

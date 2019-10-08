@@ -74,6 +74,7 @@ pub enum DisplayMode {
     Circle,
     // Line,    // Not currently working due to nannou
     Dots,
+
     Pixels,
 }
 

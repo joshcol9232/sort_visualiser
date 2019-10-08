@@ -105,3 +105,4 @@ cargo build --release
 Then you will find the executable in `target/release/sort_visualiser`.
 
 If you have a problem with linking, so `shaderc-sys` cannot compile, then build it with the `--features=shaderc_fix` flag.
+

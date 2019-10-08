@@ -84,6 +84,7 @@ NOTE: Reloading the config file does not reload audio settings, for that you nee
 **Key** | **Sort**
 --- | ---
 **C** | Circle.
+**O** | Doughnut.
 **B** | Bars.
 **D** | Dots.
 **P** | Pixels.

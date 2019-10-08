@@ -68,10 +68,11 @@ impl FromStr for MergeSortType {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum DisplayMode {
     Bars,
     Circle,
+    Doughnut,
     // Line,    // Not currently working due to nannou
     Dots,
 

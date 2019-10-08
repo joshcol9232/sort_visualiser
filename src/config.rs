@@ -15,6 +15,7 @@ pub struct Config {
     pub quicksort_partition_type: QuickSortType,
     pub merge_sort_type: MergeSortType,
     pub shuffle_passes: u16,
+    pub doughnut_ratio: f32,
 }
 
 
@@ -38,6 +39,8 @@ impl From<&Yaml> for Config {
             ).unwrap(),
             shuffle_passes: conf["shuffle_passes"].as_i64()
                 .expect("Could not parse shuffle_passes field in config as an integer.") as u16,
+            doughnut_ratio: conf["doughnut_ratio"].as_f64()
+                .expect("Could not parse doughnut_ratio as a 64 bit float.") as f32,
         }
     }
 }

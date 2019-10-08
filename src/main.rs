@@ -116,6 +116,7 @@ impl Model {
                 self.current_display_mode,
                 self.window_dims,
                 transform,
+                self.config.doughnut_ratio,
             );
         }
     }
@@ -197,13 +198,14 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::I => model.instruction(SortInstruction::Reverse),
                 Key::L => model.reload_config(),
 
-                Key::C | Key::B | Key::D => {
+                Key::C | Key::B | Key::D | Key::O => {
                     if model.arrays.len() > 1 {
                         model.set_to_single_array();
                     }
 
                     match key {
                         Key::C => model.current_display_mode = DisplayMode::Circle,
+                        Key::O => model.current_display_mode = DisplayMode::Doughnut,
                         Key::B => model.current_display_mode = DisplayMode::Bars,
                         Key::D => model.current_display_mode = DisplayMode::Dots,
                         // Key::L => model.current_display_mode = DisplayMode::Line,

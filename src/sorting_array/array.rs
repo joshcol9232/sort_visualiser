@@ -5,6 +5,7 @@ use std::time::Duration;
 use nannou::{
     draw::Draw,
     geom::point::Point2,
+    color::named::*,
 };
 
 use super::{commands::*, sorts};
@@ -208,6 +209,7 @@ impl SortArray {
         mode: DisplayMode,
         window_dims: (f32, f32),
         transform: (f32, f32),
+        doughnut_ratio: f32,
     ) {
         let data_read = self.data.read().unwrap();
 
@@ -230,7 +232,7 @@ impl SortArray {
                     colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);
                 }
             }
-            DisplayMode::Circle => {
+            DisplayMode::Circle | DisplayMode::Doughnut => {
                 let radius = if window_dims.0 > window_dims.1 {
                     window_dims.1
                 } else {
@@ -252,6 +254,13 @@ impl SortArray {
                         .hsv(*d as f32 / data_read.max_val as f32, 1.0, 1.0);
 
                     angle = connecting_angle;
+                }
+
+                if mode == DisplayMode::Doughnut {  // Draw hole in doughnut
+                    draw.ellipse()
+                        .radius(radius * doughnut_ratio)
+                        .resolution(data_read.max_val)  // Lines up with each colour section
+                        .color(BLACK);
                 }
             }
             // DisplayMode::Line => {

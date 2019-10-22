@@ -12,6 +12,12 @@ Displays array in a circle:
 
 <img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/circle_vis.png" alt="Circular Visualisation" width="475" height="474">
 
+#### Doughnut:
+
+Displays array as a doughnut (similar to circle):
+
+<img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/doughnut_vis.png" alt="Doughnut Visualisation" width="475" height="474">
+
 #### Bars:
 
 Displays array as a row of bars:

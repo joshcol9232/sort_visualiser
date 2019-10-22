@@ -14,9 +14,7 @@ Displays array in a circle:
 
 #### Doughnut:
 
-Displays array as a doughnut (similar to circle):
-
-<img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/doughnut_vis.png" alt="Doughnut Visualisation" width="475" height="474">
+Displays array as a doughnut (pretty much just circle).
 
 #### Bars:
 

@@ -3,7 +3,7 @@ array_length: 400                     # Default: 200. Length of the array when i
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound
-sound_enabled: true                   # Default: true
+sound_enabled: false                  # Default: true
 waveform: hsin                        # Default: hsin. Available: sin, hsin, square, triangle
 maximum_pitch: 392.0                  # Default: 392.0.
 minimum_pitch: 130.81                 # Default: 130.81.
@@ -17,10 +17,10 @@ quicksort_partitioning: lomuto      # Default: lomuto. Available: lomuto, lomuto
 merge_sort_type: in_place     # Default: in_place. Available: in_place, in_place_multi.
 
 ## Radix sort:
-radix_lsd_base: 2                    # Default: 10. Range inclusive from (2, 36).
+radix_lsd_base: 10                    # Default: 10. Range inclusive from (2, 36).
 
 # Visualiser settings:
-doughnut_ratio: 0.382                  # Default: 0.2. Range from 0.0 -> 1.0. Ratio of hole in doughnut to overall doughnut. Lower = smaller hole.
+doughnut_ratio: 0.382                  # Default: 0.382. Range from 0.0 -> 1.0. Ratio of hole in doughnut to overall doughnut. Lower = smaller hole.
 
 # --- SLEEP TIMES ---
 # These are applied by dividing the time by the time complexity [O(n)]

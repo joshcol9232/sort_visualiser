@@ -42,6 +42,14 @@ Displays array as dots (looks good with quick sort):
 
 Exact same colouring as the bar visualisation.
 
+#### Pyramid:
+
+Displays array as a vertical pyramid:
+
+<img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/pyramid_vis.png" alt="Pyramid Visualisation" width="475" height="474">
+
+The same colouring as the bar visualisation.
+
 #### Pixels (M):
 
 Displays multiple arrays, spanning from the left to the right of the window. Each row of pixels is a seperate array.
@@ -90,6 +98,7 @@ NOTE: Reloading the config file does not reload audio settings, for that you nee
 **C** | Circle.
 **O** | Doughnut.
 **B** | Bars.
+**Y** | Pyramid
 **D** | Dots.
 **P** | Pixels.
 

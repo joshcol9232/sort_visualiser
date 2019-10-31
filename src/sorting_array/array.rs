@@ -232,6 +232,28 @@ impl SortArray {
                     colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);
                 }
             }
+            DisplayMode::Pyramid => {
+                let scale = (
+                    window_dims.0 / (2 * data_read.max_val) as f32,
+                    window_dims.1 / array_len as f32,
+                );
+
+                let half_width = window_dims.0 as f32/2.0;
+
+                for (i, d) in data_read.iter().enumerate() {
+                    let y = (array_len - i) as f32 * scale.1 - scale.1/2.0;
+                    let diff = (*d as f32 + 1.0) * scale.0;
+                    
+                    let drawing = draw
+                        .line()
+                        .x_y(transform.0, transform.1)
+                        .start(Point2::new(half_width - diff, y))
+                        .end(Point2::new(half_width + diff, y))
+                        .weight(scale.1);
+
+                    colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);
+                }
+            }
             DisplayMode::Circle | DisplayMode::Doughnut => {
                 let radius = if window_dims.0 > window_dims.1 {
                     window_dims.1

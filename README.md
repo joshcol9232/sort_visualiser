@@ -39,11 +39,13 @@ Colours may change in the future.
 
 With Lomuto partitioning quicksort (default quicksort implemented), the two active elements show the area where the elements are collecting that are bigger than the pivot. Once it reaches the end of the partition it moves the pivot to before that area.
 
-#### Disparity Bars:
+#### Disparity Line:
 
-Displays the array as a row of bars just like the last one, but the height is the difference between where the element is and where it is supposed to be.
+Displays the array as a row of bars through the middle of the screen, where the height is the difference between where the element is and where it is supposed to be.
 
-Looks good with cocktail shaker sort.
+Looks good with cocktail shaker sort. Here it is while doing a cocktail shaker sort:
+
+<img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/disp_line_vis.png" alt="Disparity Line Visualisation" width="475" height="474">
 
 #### Dots:
 
@@ -97,7 +99,7 @@ NOTE: Due to Quicksort's Lomuto partitioning scheme, sorting the sorted or rever
 **R** | Reset array.
 **I** | Invert/reverse array.
 **Q** | Cancel current sort.
-**L** | Reload config file.
+**Shift + L** | Reload config file.
 
 Resetting the array regenerates all of the elements in the array, so if you ever have any problems with the array, for example duplicate array elements due to running multiple sorts, then reset the array and you should be good to go.
 
@@ -109,7 +111,7 @@ NOTE: Reloading the config file does not reload audio settings, for that you nee
 **C** | Circle.
 **O** | Doughnut.
 **B** | Bars.
-**N** | Disparity Bars.
+**L** | Disparity Line.
 **Y** | Pyramid
 **D** | Dots.
 **P** | Pixels.

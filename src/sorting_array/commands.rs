@@ -77,7 +77,7 @@ pub enum DisplayMode {
     // Line,    // Not currently working due to nannou
     Dots,
 
-    DisparityBars,  // How far away it is from the place that it should be
+    DisparityLine,  // How far away it is from the place that it should be
 
     Pixels,
 }

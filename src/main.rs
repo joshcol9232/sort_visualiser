@@ -40,6 +40,8 @@ struct Model {
     audio_time_started: Option<Instant>,
     array_len: usize,
     config: Config,
+
+    shift_key_down: bool,
 }
 
 impl Model {
@@ -83,6 +85,7 @@ impl Model {
             audio_time_started: None,
             array_len: config_obj.array_len,
             config: config_obj,
+            shift_key_down: false,
         })
     }
 
@@ -193,10 +196,18 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
         // Keyboard events
         KeyPressed(key) => {
             match key {
+                Key::LShift => model.shift_key_down = true,
+
                 Key::S => model.instruction(SortInstruction::Shuffle(model.config.shuffle_passes)),
                 Key::R => model.instruction(SortInstruction::Reset),
                 Key::I => model.instruction(SortInstruction::Reverse),
-                Key::L => model.reload_config(),
+                Key::L => {
+                    if model.shift_key_down {
+                        model.reload_config()
+                    } else {
+                        model.current_display_mode = DisplayMode::DisparityLine
+                    }
+                },
 
                 Key::C | Key::B | Key::D | Key::O | Key::Y | Key::N => {
                     if model.arrays.len() > 1 {
@@ -209,7 +220,6 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                         Key::B => model.current_display_mode = DisplayMode::Bars,
                         Key::Y => model.current_display_mode = DisplayMode::Pyramid,
                         Key::D => model.current_display_mode = DisplayMode::Dots,
-                        Key::N => model.current_display_mode = DisplayMode::DisparityBars,
                         // Key::L => model.current_display_mode = DisplayMode::Line,
                         _ => (),
                     }
@@ -237,7 +247,12 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 _ => (),
             }
         }
-        KeyReleased(_key) => {}
+        KeyReleased(key) => {
+            match key {
+                Key::LShift => model.shift_key_down = false,
+                _ => (),
+            }
+        }
 
         // Mouse events
         MouseMoved(_pos) => {}

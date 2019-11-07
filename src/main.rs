@@ -198,7 +198,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::I => model.instruction(SortInstruction::Reverse),
                 Key::L => model.reload_config(),
 
-                Key::C | Key::B | Key::D | Key::O | Key::Y => {
+                Key::C | Key::B | Key::D | Key::O | Key::Y | Key::N => {
                     if model.arrays.len() > 1 {
                         model.set_to_single_array();
                     }
@@ -209,6 +209,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                         Key::B => model.current_display_mode = DisplayMode::Bars,
                         Key::Y => model.current_display_mode = DisplayMode::Pyramid,
                         Key::D => model.current_display_mode = DisplayMode::Dots,
+                        Key::N => model.current_display_mode = DisplayMode::DisparityBars,
                         // Key::L => model.current_display_mode = DisplayMode::Line,
                         _ => (),
                     }

@@ -1,5 +1,5 @@
 # Array Structure Settings
-array_length: 400                     # Default: 200. Length of the array when in a single array visualisation.
+array_length: 200                     # Default: 200. Length of the array when in a single array visualisation.
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound

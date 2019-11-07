@@ -2,8 +2,13 @@
 
 ### Visualisations:
 
-There are two types of visualisations; ones that use a single array, and ones that use multiple arrays. I will mark ones that use multiple arrays with an (M).
-You can switch between visualisations while sorting IF you are switching to a visualisation of the same type.
+There are three types of visualisations:
+
+- Ones that use a single array and display each element based on it's value.
+- Ones that use a single array and display each element based on it's disparity, a.k.a how far away the element is from where it's supposed to be. These will usually have "disparity" in the name.
+- Ones that use multiple arrays. I will mark ones that use multiple arrays with an (M).
+
+You can switch between visualisations while sorting IF you are switching to a visualisation of the same array type (single or multi).
 More visualisations are to come in the future. :)
 
 #### Circle:
@@ -33,6 +38,12 @@ Pivot (Quicksort) | Purple
 Colours may change in the future.
 
 With Lomuto partitioning quicksort (default quicksort implemented), the two active elements show the area where the elements are collecting that are bigger than the pivot. Once it reaches the end of the partition it moves the pivot to before that area.
+
+#### Disparity Bars:
+
+Displays the array as a row of bars just like the last one, but the height is the difference between where the element is and where it is supposed to be.
+
+Looks good with cocktail shaker sort.
 
 #### Dots:
 
@@ -98,6 +109,7 @@ NOTE: Reloading the config file does not reload audio settings, for that you nee
 **C** | Circle.
 **O** | Doughnut.
 **B** | Bars.
+**N** | Disparity Bars.
 **Y** | Pyramid
 **D** | Dots.
 **P** | Pixels.

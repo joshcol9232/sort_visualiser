@@ -214,7 +214,7 @@ impl SortArray {
         let data_read = self.data.read().unwrap();
 
         match mode {
-            DisplayMode::Bars => {
+            DisplayMode::Bars | DisplayMode::DisparityBars => {
                 let scale = (
                     window_dims.0 / array_len as f32,
                     window_dims.1 / data_read.max_val as f32,
@@ -222,11 +222,19 @@ impl SortArray {
 
                 for (i, d) in data_read.iter().enumerate() {
                     let x = (i as f32 * scale.0) + scale.0 / 2.0;
+                    let y = match mode {
+                        DisplayMode::Bars => (*d as f32 + 1.0) * scale.1,
+                        DisplayMode::DisparityBars => ((*d as f32 - i as f32).abs() + 1.0) * scale.1,
+                        _ => panic!("Somehow got past first match statement with wrong type."),    // This should be impossible
+                    };
+
+                    if y <= 0.0 { panic!("Bar will not display: {} {}", d, i) }
+
                     let drawing = draw
                         .line()
                         .x_y(transform.0, transform.1)
                         .start(Point2::new(x, 0.0))
-                        .end(Point2::new(x, (*d as f32 + 1.0) * scale.1))
+                        .end(Point2::new(x, y))
                         .weight(scale.0);
 
                     colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);

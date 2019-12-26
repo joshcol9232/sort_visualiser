@@ -257,6 +257,32 @@ impl SortArray {
                     colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);
                 }
             }
+            DisplayMode::DisparityLoop => {
+                const RING_THICKNESS: f32 = 10.0;
+
+                let max_radius = window_dims.0.min(window_dims.1) / 2.0;
+
+                let angle_interval = TWO_PI / array_len as f32;
+                let mut angle = 0.0;
+
+                for (i, d) in data_read.iter().enumerate() {
+                    let ratio = 1.0 - ((*d as f32 - i as f32).abs() + 1.0)/data_read.max_val as f32;    // Ratio of disparity
+
+                    let connecting_angle = angle + angle_interval;
+                    let outer_radius = max_radius * ratio;
+
+                    draw.quad()
+                        .points(
+                            tools::get_point_on_radius(outer_radius, angle),
+                            tools::get_point_on_radius(outer_radius, connecting_angle),
+                            tools::get_point_on_radius(outer_radius - RING_THICKNESS, connecting_angle),
+                            tools::get_point_on_radius(outer_radius - RING_THICKNESS, angle),
+                        )
+                        .hsv(*d as f32 / data_read.max_val as f32, 1.0, 1.0);
+
+                    angle = connecting_angle;
+                }
+            }
             DisplayMode::Pyramid => {
                 let scale = (
                     window_dims.0 / (2 * data_read.max_val) as f32,
@@ -280,11 +306,7 @@ impl SortArray {
                 }
             }
             DisplayMode::Circle | DisplayMode::Doughnut => {
-                let radius = if window_dims.0 > window_dims.1 {
-                    window_dims.1
-                } else {
-                    window_dims.0
-                } / 2.0;
+                let radius = window_dims.0.min(window_dims.1) / 2.0;
 
                 let angle_interval = TWO_PI / array_len as f32;
                 let mut angle = 0.0;

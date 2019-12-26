@@ -201,15 +201,8 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::S => model.instruction(SortInstruction::Shuffle(model.config.shuffle_passes)),
                 Key::R => model.instruction(SortInstruction::Reset),
                 Key::I => model.instruction(SortInstruction::Reverse),
-                Key::L => {
-                    if model.shift_key_down {
-                        model.reload_config()
-                    } else {
-                        model.current_display_mode = DisplayMode::DisparityLine
-                    }
-                },
 
-                Key::C | Key::B | Key::D | Key::O | Key::Y | Key::N => {
+                Key::C | Key::B | Key::D | Key::O | Key::Y | Key::N | Key::L | Key::K => {
                     if model.arrays.len() > 1 {
                         model.set_to_single_array();
                     }
@@ -220,6 +213,17 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                         Key::B => model.current_display_mode = DisplayMode::Bars,
                         Key::Y => model.current_display_mode = DisplayMode::Pyramid,
                         Key::D => model.current_display_mode = DisplayMode::Dots,
+                        Key::L => {
+                            if model.shift_key_down {
+                                model.reload_config()
+                            } else {
+                                model.current_display_mode = DisplayMode::DisparityLine
+                            }
+                        },
+                        Key::K => {
+                            model.current_display_mode = DisplayMode::DisparityLoop;
+                            println!("Changed to disparity loop.");
+                        },
                         // Key::L => model.current_display_mode = DisplayMode::Line,
                         _ => (),
                     }

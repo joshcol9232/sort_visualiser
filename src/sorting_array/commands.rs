@@ -78,6 +78,7 @@ pub enum DisplayMode {
     Dots,
 
     DisparityLine,  // How far away it is from the place that it should be
+    DisparityLoop,
 
     Pixels,
 }

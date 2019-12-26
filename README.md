@@ -47,6 +47,13 @@ Looks good with cocktail shaker sort. Here it is while doing a cocktail shaker s
 
 <img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/disp_line_vis.png" alt="Disparity Line Visualisation" width="475" height="474">
 
+#### Disparity Loop:
+
+Displays array as circular loop made up of segments, where each segment's distance from the centre of the circle is determined by it's disparity;
+the distance from where it is supposed to be.
+
+<img src="https://github.com/eggmund/sort_visualiser/blob/master/readme_images/disp_loop_vis.png" alt="Disparity Loop Visualisation" width="475" height="474">
+
 #### Dots:
 
 Displays array as dots (looks good with quick sort):
@@ -112,6 +119,7 @@ NOTE: Reloading the config file does not reload audio settings, for that you nee
 **O** | Doughnut.
 **B** | Bars.
 **L** | Disparity Line.
+**K** | Disparity Loop.
 **Y** | Pyramid
 **D** | Dots.
 **P** | Pixels.

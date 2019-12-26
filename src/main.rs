@@ -220,10 +220,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                                 model.current_display_mode = DisplayMode::DisparityLine
                             }
                         },
-                        Key::K => {
-                            model.current_display_mode = DisplayMode::DisparityLoop;
-                            println!("Changed to disparity loop.");
-                        },
+                        Key::K => model.current_display_mode = DisplayMode::DisparityLoop,
                         // Key::L => model.current_display_mode = DisplayMode::Line,
                         _ => (),
                     }

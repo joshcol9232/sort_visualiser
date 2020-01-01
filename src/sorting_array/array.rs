@@ -125,9 +125,14 @@ impl SortArray {
                     match partition_type {
                         QuickSortType::Lomuto {
                             multithreaded,
+                            insertion_hybrid,
                         } => {
-                            if multithreaded {
+                            if multithreaded && insertion_hybrid {
+                                sorts::quick_sorting::quicktimsort_multithreaded(data_arc_cln.clone(), sleep_time, 0, data_len - 1)
+                            } else if multithreaded {
                                 sorts::quick_sorting::quick_sort_lomuto_multithreaded(data_arc_cln.clone(), sleep_time, 0, data_len - 1)
+                            } else if insertion_hybrid {
+                                sorts::quick_sorting::quicktimsort(data_arc_cln.clone(), sleep_time, 0, data_len - 1)
                             } else {
                                 sorts::quick_sorting::quick_sort_lomuto(data_arc_cln.clone(), sleep_time, 0, data_len - 1)
                             }
@@ -138,7 +143,7 @@ impl SortArray {
             SortInstruction::InsertionSort => {
                 start_sort_thread!(self, data_arc_cln, {
                     let sleep_time = sleep_times_cln.insertion/(data_len).pow(2) as u32;
-                    sorts::insertion_sort(data_arc_cln.clone(), &sleep_time);
+                    sorts::insertion_sort(data_arc_cln.clone(), &sleep_time, 0, data_len - 1);
                 });
             }
             SortInstruction::SelectionSort => {

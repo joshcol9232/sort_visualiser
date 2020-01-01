@@ -78,14 +78,12 @@ pub fn cocktail_shaker_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &
     }
 }
 
-pub fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration) {
-    let len = data_arc.read().unwrap().len();
-
-    for i in 1..len {
+pub fn insertion_sort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: &Duration, start: usize, end: usize) { // end is inclusive
+    for i in start..end+1 {
         check_for_stop!(data_arc);
         data_arc.write().unwrap().set_pivot(i);
 
-        for j in (1..=i).rev() {
+        for j in (start+1..=i).rev() {
             data_arc.write().unwrap().set_active(j);
             {
                 let read = data_arc.read().unwrap();
@@ -252,6 +250,8 @@ pub mod quick_sorting {
     use std::sync::{Arc, RwLock};
     use super::*;
 
+    const MAX_RUN_SIZE: usize = 16;     // Used in quicktimsort. If the array given is less than MAX_RUN_SIZE in length, then sort with insertion sort
+
     // Lomuto partition scheme: https://en.wikipedia.org/wiki/Quicksort#Lomuto_partition_scheme
     #[inline]
     fn lomuto_partitioning(
@@ -323,6 +323,110 @@ pub mod quick_sorting {
             }
         } 
     }
+
+    // Like timsort but for quicksort instead (because why not)
+    // Does regular quicksort until the array size becomes less than MAX_RUN_SIZE, where it then switches to insertion
+    // sort, since insertion sort works well with small arrays.
+    pub fn quicktimsort(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: Arc<Duration>, l: usize, r: usize) {        
+        if l < r {
+            if r - l < MAX_RUN_SIZE {
+                insertion_sort(data_arc, &sleep_time, l, r);
+            } else {
+                let p = lomuto_partitioning(data_arc.clone(), sleep_time.clone(), l, r);
+                if p > 0 {
+                    quicktimsort(data_arc.clone(), sleep_time.clone(), l, p - 1);
+                }
+                if p < r {
+                    quicktimsort(data_arc.clone(), sleep_time, p + 1, r);
+                }
+            }
+        }
+    }
+
+    pub fn quicktimsort_multithreaded(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: Arc<Duration>, l: usize, r: usize) {
+        if l < r {
+            if r - l < MAX_RUN_SIZE {
+                insertion_sort(data_arc, &sleep_time, l, r);
+            } else {
+                let mut child_threads: Vec<thread::JoinHandle<()>> = Vec::new();
+
+                // Not equal
+                let p = lomuto_partitioning(data_arc.clone(), sleep_time.clone(), l, r);
+                if p > 0 {
+                    let cln = data_arc.clone();
+                    let slp_cln = sleep_time.clone();
+                    child_threads.push(thread::spawn(move || {
+                        quick_sort_lomuto_multithreaded(cln, slp_cln, l, p - 1);
+                    }));
+                }
+                if p < r {
+                    let cln = data_arc.clone();
+                    let slp_cln = sleep_time.clone();
+                    child_threads.push(thread::spawn(move || {
+                        quick_sort_lomuto_multithreaded(cln, slp_cln, p + 1, r);
+                    }));
+                }
+
+                for child in child_threads {
+                    child.join().unwrap();
+                }
+            }
+        }
+    }
+}
+
+// Works kind of like pushing the left array into the right array.
+// Outside of "merge_sorting" sub module due to it's use in TimSort.
+fn merge_in_place(
+    data_arc: Arc<RwLock<DataArrWrapper>>,
+    sleep_time: Arc<Duration>,
+    mut start: usize,
+    mut mid: usize,
+    end: usize,
+) {
+    let mut start2 = mid + 1;
+
+    let mid_less_than_start2 = {
+        let read = data_arc.read().unwrap();
+        read[mid] <= read[start2]
+    };
+    if mid_less_than_start2 {
+        return; // Exit
+    }
+
+    while start <= mid && start2 <= end {
+        check_for_stop!(data_arc);
+
+        let start_less_than_start2 = {
+            let read = data_arc.read().unwrap();
+            read[start] <= read[start2]
+        };
+        if start_less_than_start2 { // Then it is in the correct place.
+            start += 1;
+        } else {
+            // if element 1 is not in the right place, move it until it is.
+            let value = data_arc.read().unwrap()[start2]; // Element 2
+            let mut index = start2;
+
+            {
+                // Shift all elements between element 1 and element 2 right by 1 to insert this element.
+                let mut write = data_arc.write().unwrap();
+                write.set_pivot(start2);
+
+                while index != start {
+                    write.set_active(index);
+                    write[index] = write[index - 1];
+                    index -= 1;
+                }
+                write[start] = value;
+            }
+            start += 1;
+            mid += 1;
+            start2 += 1;
+
+            thread::sleep(*sleep_time);
+        }
+    }
 }
 
 pub mod merge_sorting {
@@ -330,59 +434,6 @@ pub mod merge_sorting {
     use std::thread;
     use std::sync::{Arc, RwLock};
     use super::*;
-
-    // Works kind of like pushing the left array into the right array.
-    fn merge_in_place(
-        data_arc: Arc<RwLock<DataArrWrapper>>,
-        sleep_time: Arc<Duration>,
-        mut start: usize,
-        mut mid: usize,
-        end: usize,
-    ) {
-        let mut start2 = mid + 1;
-
-        let mid_less_than_start2 = {
-            let read = data_arc.read().unwrap();
-            read[mid] <= read[start2]
-        };
-        if mid_less_than_start2 {
-            return; // Exit
-        }
-
-        while start <= mid && start2 <= end {
-            check_for_stop!(data_arc);
-
-            let start_less_than_start2 = {
-                let read = data_arc.read().unwrap();
-                read[start] <= read[start2]
-            };
-            if start_less_than_start2 { // Then it is in the correct place.
-                start += 1;
-            } else {
-                // if element 1 is not in the right place, move it until it is.
-                let value = data_arc.read().unwrap()[start2]; // Element 2
-                let mut index = start2;
-
-                {
-                    // Shift all elements between element 1 and element 2 right by 1 to insert this element.
-                    let mut write = data_arc.write().unwrap();
-                    write.set_pivot(start2);
-
-                    while index != start {
-                        write.set_active(index);
-                        write[index] = write[index - 1];
-                        index -= 1;
-                    }
-                    write[start] = value;
-                }
-                start += 1;
-                mid += 1;
-                start2 += 1;
-
-                thread::sleep(*sleep_time);
-            }
-        }
-    }
 
     pub fn merge_sort_in_place(data_arc: Arc<RwLock<DataArrWrapper>>, sleep_time: Arc<Duration>, l: usize, r: usize) {
         if l < r {

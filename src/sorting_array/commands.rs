@@ -26,6 +26,7 @@ pub enum SortInstruction {
 pub enum QuickSortType {
     Lomuto {
         multithreaded: bool,
+		insertion_hybrid: bool,
     },
 }
 
@@ -34,11 +35,13 @@ impl FromStr for QuickSortType {
 
     fn from_str(s: &str) -> io::Result<Self> {
         match s.to_lowercase().as_str() {
-            "lomuto" => Ok(QuickSortType::Lomuto { multithreaded: false }),
-            "lomuto_multi" => Ok(QuickSortType::Lomuto { multithreaded: true }),
+            "lomuto" => Ok(QuickSortType::Lomuto { multithreaded: false, insertion_hybrid: false }),
+            "lomuto_multi" => Ok(QuickSortType::Lomuto { multithreaded: true, insertion_hybrid: false }),
+            "lomuto_insertion_hybrid" => Ok(QuickSortType::Lomuto { multithreaded: false, insertion_hybrid: true }),
+            "lomuto_insertion_hybrid_multi" => Ok(QuickSortType::Lomuto { multithreaded: true, insertion_hybrid: true }),
             x => Err(io::Error::new(
                 ErrorKind::Other,
-                format!("Invalid quicksort_partitioning format in config file: {}. Options are: lomuto, lomuto_multi", x)
+                format!("Invalid quicksort_partitioning format in config file: {}. Options are: lomuto, lomuto_multi, lomuto_insertion_hybrid, lomuto_insertion_hybrid_multi", x)
             )),
         }
     }

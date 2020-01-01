@@ -8,6 +8,7 @@ pub mod config;
 use nannou::draw::Draw;
 use nannou::prelude::*;
 use nannou_audio::Buffer;
+use nannou::color::Rgb;
 use yaml_rust::Yaml;
 
 use crate::{
@@ -23,10 +24,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 const CONFIG_FILE_LOCATION: &str = "./config.yaml";
-
 pub const TWO_PI: f32 = 2.0 * PI;
 const SOUND_DURATION: Duration = Duration::from_millis(100);
-
 
 fn main() {
     nannou::app(model).update(update).run();
@@ -244,7 +243,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
                 Key::Key5 => model.instruction(SortInstruction::ShellSort),
                 Key::Key6 => model.instruction(SortInstruction::QuickSort(model.config.quicksort_partition_type)),
                 Key::Key7 => model.instruction(SortInstruction::MergeSort(model.config.merge_sort_type)),
-                Key::Key8 => model.instruction(SortInstruction::RadixSort(model.config.radix_base)),
+                Key::Key9 => model.instruction(SortInstruction::RadixSort(model.config.radix_base)),
                 _ => (),
             }
         }

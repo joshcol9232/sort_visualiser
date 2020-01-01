@@ -89,13 +89,16 @@ Does not display active elements etc because it would be a bit too cluttered.
 **3** | Insertion Sort.
 **4** | Selection Sort.
 **5** | Shell Sort.
-**6** | Quicksort: <ul><li>Lomuto Partitioning</li><li>Multithreaded Lomuto Partitioning</li></ul>
+**6** | Quicksort: <ul><li>Lomuto Partitioning</li><li>Multithreaded Lomuto Partitioning</li><li>Lomuto Partitioning Quicktimsort</li><li>Multithreaded Lomuto Partitioning Quicktimsort</li></ul>
 **7** | Merge Sort: <ul><li>In-place</li><li>Multithreaded In-place</li></ul>
 **8** | Radix LSD Sort (Base 10).
 
 Ones with multiple options can be changed easily in the `config.yaml` file.
 
 You can do multiple sorts at once but be careful since this can ruin the array (however you can reset by pressing **R**).
+
+Quicktimsort is a home-made sort and is a hybrid of Quicksort and Insertion sort inspired by TimSort. It is regular Quicksort until the array is small enough that
+Insertion sort is effective, since Insertion sort is quite speedy for small arrays.
 
 NOTE: Due to Quicksort's Lomuto partitioning scheme, sorting the sorted or reversed array is incredibly slow, and is a key problem with this partitioning scheme, since it uses the last element as the pivot, rather than the middle.
 

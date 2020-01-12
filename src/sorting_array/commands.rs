@@ -77,7 +77,6 @@ pub enum DisplayMode {
     Pyramid,
     Circle,
     Doughnut,
-    // Line,    // Not currently working due to nannou
     Dots,
 
     DisparityLine,  // How far away it is from the place that it should be

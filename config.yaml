@@ -1,5 +1,5 @@
 # Array Structure Settings
-array_length: 600                     # Default: 200. Length of the array when in a single array visualisation.
+array_length: 400                     # Default: 400. Length of the array when in a single array visualisation.
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound
@@ -11,10 +11,10 @@ minimum_pitch: 130.81                 # Default: 130.81.
 # Sort specific settings. Settings ending with "_multi" usually mean
 # that it is multithreaded, unless specified otherwise.
 ## Quicksort:
-quicksort_partitioning: lomuto_insertion_hybrid      # Default: lomuto. Available: lomuto, lomuto_multi, lomuto_insertion_hybrid, lomuto_insertion_hybrid_multi.
+quicksort_partitioning: lomuto      # Default: lomuto. Available: lomuto, lomuto_multi, lomuto_insertion_hybrid, lomuto_insertion_hybrid_multi.
 
 ## Merge sort:
-merge_sort_type: in_place_multi     # Default: in_place. Available: in_place, in_place_multi.
+merge_sort_type: in_place			# Default: in_place. Available: in_place, in_place_multi.
 
 ## Radix sort:
 radix_lsd_base: 10                    # Default: 10. Range inclusive from (2, 36).

@@ -8,7 +8,6 @@ pub mod config;
 use nannou::draw::Draw;
 use nannou::prelude::*;
 use nannou_audio::Buffer;
-use nannou::color::Rgb;
 use yaml_rust::Yaml;
 
 use crate::{

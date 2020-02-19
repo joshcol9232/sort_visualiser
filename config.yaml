@@ -1,9 +1,9 @@
 # Array Structure Settings
-array_length: 400                     # Default: 400. Length of the array when in a single array visualisation.
+array_length: 600                     # Default: 400. Length of the array when in a single array visualisation.
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound
-sound_enabled: true                  # Default: true
+sound_enabled: false                  # Default: true
 waveform: hsin                        # Default: hsin. Available: sin, hsin, square, triangle
 maximum_pitch: 392.0                  # Default: 392.0.
 minimum_pitch: 130.81                 # Default: 130.81.

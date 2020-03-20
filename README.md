@@ -126,6 +126,7 @@ NOTE: Reloading the config file does not reload audio settings, for that you nee
 **Y** | Pyramid
 **D** | Dots.
 **P** | Pixels.
+**Shift + S** | Spiral.
 
 ### Configuration:
 

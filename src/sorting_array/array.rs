@@ -5,7 +5,10 @@ use std::time::Duration;
 use nannou::{
     draw::Draw,
     geom::point::Point2,
-    color::named::*,
+    color::{
+        named::*,
+        LinSrgba,
+    },
 };
 
 use super::{commands::*, sorts};
@@ -262,28 +265,57 @@ impl SortArray {
                     colour_element_red_grn_clrs!(data_read, i, drawing, data_read.max_val, d);
                 }
             }
-            DisplayMode::DisparityLoop => {
-                const RING_THICKNESS: f32 = 10.0;
+            DisplayMode::DisparityLoop | DisplayMode::Spiral => {   // For circles with small elements
+                const RING_THICKNESS: f32 = 6.0;
+                const SQUARE_SIZE_MUL: f32 = 1.2;
+                const SQUARE_STROKE_WEIGHT: f32 = 2.0;
+                const SQUARE_MIN_SIZE: f32 = SQUARE_STROKE_WEIGHT * 2.0;
 
                 let max_radius = window_dims.0.min(window_dims.1) / 2.0;
 
                 let angle_interval = TWO_PI / array_len as f32;
+                let square_dims = ((max_radius * angle_interval).max(RING_THICKNESS) * SQUARE_SIZE_MUL).max(SQUARE_MIN_SIZE);  // Longest length of largest posible segment
+
                 let mut angle = 0.0;
 
                 for (i, d) in data_read.iter().enumerate() {
-                    let ratio = 1.0 - ((*d as f32 - i as f32).abs() + 1.0)/data_read.max_val as f32;    // Ratio of disparity
-
                     let connecting_angle = angle + angle_interval;
-                    let outer_radius = max_radius * ratio;
+
+                    let outer_radius = match mode {
+                        DisplayMode::DisparityLoop => {
+                            let ratio = 1.0 - ((*d as f32 - i as f32).abs() + 1.0)/data_read.max_val as f32;    // Ratio of disparity
+                            max_radius * ratio
+                        },
+                        DisplayMode::Spiral => {
+                            (1.0 - *d as f32/data_read.max_val as f32) * max_radius
+                        },
+                        _ => panic!("This is actually (almost) impossible."),
+                    };
+
+                    let points = [
+                        tools::get_point_on_radius(outer_radius, angle),
+                        tools::get_point_on_radius(outer_radius, connecting_angle),
+                        tools::get_point_on_radius(outer_radius - RING_THICKNESS, connecting_angle),
+                        tools::get_point_on_radius(outer_radius - RING_THICKNESS, angle),
+                    ];
+
+                    let midpoint = Point2::new( // Midpoint of segment
+                        points[0][0] + (points[1][0] - points[0][0])/2.0,
+                        points[0][1] + (points[1][1] - points[0][1])/2.0,
+                    );
 
                     draw.quad()
-                        .points(
-                            tools::get_point_on_radius(outer_radius, angle),
-                            tools::get_point_on_radius(outer_radius, connecting_angle),
-                            tools::get_point_on_radius(outer_radius - RING_THICKNESS, connecting_angle),
-                            tools::get_point_on_radius(outer_radius - RING_THICKNESS, angle),
-                        )
+                        .points(points[0], points[1], points[2], points[3])
                         .hsv(*d as f32 / data_read.max_val as f32, 1.0, 1.0);
+
+                    if Some(i) == data_read.active {    // If is the active element, draw a box around it
+                        draw.rect()
+                            .rgb(0.0, 0.0, 0.0)
+                            .stroke(LinSrgba::new(0.9, 0.9, 0.9, 1.0))
+                            .stroke_weight(SQUARE_STROKE_WEIGHT)
+                            .xy(midpoint)
+                            .w_h(square_dims, square_dims);
+                    }
 
                     angle = connecting_angle;
                 }

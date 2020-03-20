@@ -78,6 +78,7 @@ pub enum DisplayMode {
     Circle,
     Doughnut,
     Dots,
+    Spiral,
 
     DisparityLine,  // How far away it is from the place that it should be
     DisparityLoop,

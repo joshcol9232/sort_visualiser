@@ -196,7 +196,13 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
             match key {
                 Key::LShift => model.shift_key_down = true,
 
-                Key::S => model.instruction(SortInstruction::Shuffle(model.config.shuffle_passes)),
+                Key::S => {
+                    if model.shift_key_down {
+                        model.current_display_mode = DisplayMode::Spiral
+                    } else {
+                        model.instruction(SortInstruction::Shuffle(model.config.shuffle_passes))
+                    }
+                },
                 Key::R => model.instruction(SortInstruction::Reset),
                 Key::I => model.instruction(SortInstruction::Reverse),
 

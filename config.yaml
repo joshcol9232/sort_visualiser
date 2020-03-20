@@ -1,5 +1,5 @@
 # Array Structure Settings
-array_length: 400                     # Default: 400. Length of the array when in a single array visualisation.
+array_length: 1000                     # Default: 400. Length of the array when in a single array visualisation.
 multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
 
 # Sound
@@ -31,10 +31,10 @@ doughnut_ratio: 0.382                  # Default: 0.382. Range from 0.0 -> 1.0. 
 ## The times below are for each time complexity. You can also change
 ## individual sorts in the section below this.
 ## To change each time below just change the number, not the whole line.
-_n_squared_slp: &n_squared 60000           # Default: 60000. For O(n^2)
-_n_pow_3_over_2: &n_pow_3_over_2 18000     # Default: 18000. For O[n^(3/2)]
-_n_log_n: &n_log_n 4000                    # Default: 4000. For O[n log n]
-_n_w: &n_w 1300                            # Default: 1300. For O[w * n], where w is the bits required to store each key (Radix Sorts). Applied as O(n)
+_n_squared_slp: &n_squared 40000           # Default: 60000. For O(n^2)
+_n_pow_3_over_2: &n_pow_3_over_2 14000     # Default: 18000. For O[n^(3/2)]
+_n_log_n: &n_log_n 3000                    # Default: 4000. For O[n log n]
+_n_w: &n_w 1100                            # Default: 1300. For O[w * n], where w is the bits required to store each key (Radix Sorts). Applied as O(n)
 
 ## Individual sort times.
 ## To change these, replace *x with a number, or change the numbers above

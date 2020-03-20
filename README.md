@@ -145,3 +145,6 @@ Then you will find the executable in `target/release/sort_visualiser`.
 
 If you have a problem with linking, so `shaderc-sys` cannot compile, then build it with the `--features=shaderc_fix` flag.
 
+#### Note to self:
+
+Install `pulseaudio-alsa` to fix `ALSA lib pcm_dmix.c:1089: (snd_pcm_dmix_open) unable to open slave` error.

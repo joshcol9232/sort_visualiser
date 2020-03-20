@@ -1,0 +1,55 @@
+# Array Structure Settings
+array_length: 1000                     # Default: 400. Length of the array when in a single array visualisation.
+multi_array_length: 100               # Default: 100. Length of the arrays when in a multi array visualisation.
+
+# Sound
+sound_enabled: false                  # Default: true
+waveform: hsin                        # Default: hsin. Available: sin, hsin, square, triangle
+maximum_pitch: 392.0                  # Default: 392.0.
+minimum_pitch: 130.81                 # Default: 130.81.
+
+# Sort specific settings. Settings ending with "_multi" usually mean
+# that it is multithreaded, unless specified otherwise.
+## Quicksort:
+quicksort_partitioning: lomuto      # Default: lomuto. Available: lomuto, lomuto_multi, lomuto_insertion_hybrid, lomuto_insertion_hybrid_multi.
+
+## Merge sort:
+merge_sort_type: in_place			# Default: in_place. Available: in_place, in_place_multi.
+
+## Radix sort:
+radix_lsd_base: 10                    # Default: 10. Range inclusive from (2, 36).
+
+# Visualiser settings:
+doughnut_ratio: 0.382                  # Default: 0.382. Range from 0.0 -> 1.0. Ratio of hole in doughnut to overall doughnut. Lower = smaller hole.
+
+# --- SLEEP TIMES ---
+# These are applied by dividing the time by the time complexity [O(n)]
+# of the sort, where n is the number of elements in the array, or just
+# by dividing by the number of elements in the array if the time complexity
+# is almost the same as doing that.
+
+## The times below are for each time complexity. You can also change
+## individual sorts in the section below this.
+## To change each time below just change the number, not the whole line.
+_n_squared_slp: &n_squared 40000           # Default: 60000. For O(n^2)
+_n_pow_3_over_2: &n_pow_3_over_2 14000     # Default: 18000. For O[n^(3/2)]
+_n_log_n: &n_log_n 3000                    # Default: 4000. For O[n log n]
+_n_w: &n_w 1100                            # Default: 1300. For O[w * n], where w is the bits required to store each key (Radix Sorts). Applied as O(n)
+
+## Individual sort times.
+## To change these, replace *x with a number, or change the numbers above
+## so that sorts with the same time complexity can be changed at once.
+bubble_sleep: *n_squared                    # Default: *n_squared.
+cocktail_shaker_sleep: *n_squared           # Default: *n_squared.
+insertion_sleep: *n_squared                 # Default: *n_squared.
+selection_sleep: *n_squared                 # Default: *n_squared.
+shell_sleep: *n_pow_3_over_2                # Default: *n_pow_3_over_2.
+quick_sleep: *n_log_n                       # Default: *n_log_n.
+merge_sleep: *n_log_n                       # Default: *n_log_n.
+radix_sleep: *n_w                           # Default: *n_w.
+
+## Shuffle:
+shuffle_sleep: 10                           # Default: 10. Is divided by number of elements squared.
+
+# Shuffle settings
+shuffle_passes: 3                           # Default: 3. How many times the array is shuffled.

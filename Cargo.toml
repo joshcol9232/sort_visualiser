@@ -5,12 +5,12 @@ authors = ["eggmund <joshuacolclough2@googlemail.com>"]
 edition = "2018"
 
 [dependencies]
-nannou = "0.12"
-nannou_audio = "0.2"
-shaderc = "0.6"
+audrey = "0.3"
+nannou = "0.15"
+shaderc = "0.7.2"
 shrinkwraprs = "0.3"
 radix = "0.6"
-yaml-rust = "0.4"
+yaml-rust = "0.4.5"
 
 [features]
 shaderc_fix = ["shaderc/build-from-source"]

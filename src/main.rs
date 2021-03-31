@@ -7,7 +7,7 @@ pub mod config;
 
 use nannou::draw::Draw;
 use nannou::prelude::*;
-use nannou_audio::Buffer;
+// use nannou_audio::Buffer;
 use yaml_rust::Yaml;
 
 use crate::{
@@ -34,8 +34,8 @@ struct Model {
     arrays: Vec<SortArray>,
     current_display_mode: DisplayMode,
     window_dims: (f32, f32),
-    audio_stream: nannou_audio::Stream<Audio>,
-    audio_time_started: Option<Instant>,
+    //audio_stream: nannou_audio::Stream<Audio>,
+    //audio_time_started: Option<Instant>,
     array_len: usize,
     config: Config,
 
@@ -57,6 +57,7 @@ impl Model {
             .expect("Could not parse minimum_pitch field in config as a float.");
 
         // Load audio.
+        /*
         let audio_host = nannou_audio::Host::new();
 
         let mut audio_obj = Audio::new(minimum_pitch, maximum_pitch, waveform);
@@ -71,6 +72,7 @@ impl Model {
             .unwrap();
 
         stream.pause().unwrap();
+        */
 
         Ok(Self {
             arrays: vec![SortArray::new(
@@ -79,8 +81,8 @@ impl Model {
             )],
             current_display_mode: DisplayMode::Bars,
             window_dims: (0.0, 0.0),
-            audio_stream: stream,
-            audio_time_started: None,
+            // audio_stream: stream,
+            // audio_time_started: None,
             array_len: config_obj.array_len,
             config: config_obj,
             shift_key_down: false,
@@ -162,6 +164,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     let window_rect = app.window_rect();
     model.window_dims = (window_rect.w(), window_rect.h());
 
+    /*
     if model.audio_stream.is_playing() {
         if let Some(time_playing) = model.audio_time_started {
             if time_playing.elapsed() >= SOUND_DURATION {
@@ -170,6 +173,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             }
         }
     }
+    
 
     if model.arrays.len() == 1 {        // If only a single array, then play a sound.
         let mut write = model.arrays[0].data.write().unwrap();
@@ -187,6 +191,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             }
         }
     }
+    */
 }
 
 fn event(_app: &App, model: &mut Model, event: WindowEvent) {
@@ -283,7 +288,7 @@ fn event(_app: &App, model: &mut Model, event: WindowEvent) {
     }
 }
 
-fn view(app: &App, model: &Model, frame: &Frame) {
+fn view(app: &App, model: &Model, frame: Frame) {
     let transformation = (-model.window_dims.0 / 2.0, -model.window_dims.1 / 2.0); // Axis starts bottom left corner
 
     let draw = app.draw();
@@ -294,6 +299,7 @@ fn view(app: &App, model: &Model, frame: &Frame) {
     draw.to_frame(app, &frame).unwrap();
 }
 
+/*
 pub fn audio_render(audio: &mut Audio, buffer: &mut Buffer) {
     let sample_rate = buffer.sample_rate() as f64;
 
@@ -314,3 +320,4 @@ pub fn audio_render(audio: &mut Audio, buffer: &mut Buffer) {
         }
     }
 }
+*/
